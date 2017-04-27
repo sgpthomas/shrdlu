@@ -10,7 +10,7 @@ let print_line s =
 
 let rec main () =
   let response = prompt () in
-  if response <> "quit" then
+  if not (List.mem response ["q";"quit";"exit"]) then
     let () = print_line response in
     1
   else
@@ -21,4 +21,11 @@ let rec loop () =
   if main () = 1 then loop () else ()
 ;;
 
-loop ()
+let welcome () =
+    print_line "Welcome to Shrdlu!" ;
+    print_line "Type 'q', 'quit', or 'exit' to escape." ;
+    ()
+;;
+
+welcome ();;
+loop ();;
