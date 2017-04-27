@@ -1,4 +1,3 @@
-
 let prompt () =
   let () = print_string "shrdlu> " in
   read_line ()

@@ -5,6 +5,8 @@ relationship to other objects, query objects with a certain property, and answer
 ## Building
 If you have everything installed correctly, run `build.sh` then execute `rlwrap ./shrdlu`
 
+Specify files to build in the `build.list` file. If `file A` depends on `file B`, then `file A` needs to be listed after `file B` in `build.list`
+
 ## Program Structure
 ### Main
 A small layer of glue to get everything up and running. Implements a simple prompt
