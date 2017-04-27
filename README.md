@@ -10,6 +10,7 @@ If you have everything installed correctly, run `build.sh` then execute `rlwrap 
 A small layer of glue to get everything up and running. Implements a simple prompt
 for the user to interact with.
 ### Model
+Keeps track of the current state of the world according to shrdlu.
 - Objects
   - Properties
     - Color
@@ -17,6 +18,7 @@ for the user to interact with.
     - maybe more? should be implemented to be extensible. Maybe with use of predicates?
   - Location
 ### Parser
+Attempts to make sense of English Statements and then perform actions accordingly.
 - Modifying Model
   - Creation
   - Deletion
