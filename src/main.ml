@@ -7,17 +7,19 @@ let print_line s =
   print_string s ; print_newline ()
 ;;
 
-let rec main () =
-  let response = prompt () in
-  if not (List.mem response ["q";"quit";"exit"]) then
-    let () = print_line response in
-    1
+let main (m : Model.model) =
+  let input = prompt () in
+  if not (List.mem input ["q";"quit";"exit"]) then
+    let () = print_line (Model.perform (Parser.parse input) m) in
+    (true, m)
   else
-    0
+    (false, m)
 ;;
 
-let rec loop () =
-  if main () = 1 then loop () else ()
+let rec loop (m : Model.model) =
+  match (main m) with
+  | (true, n) -> loop n
+  | (false, _) -> ()
 ;;
 
 let welcome () =
@@ -27,4 +29,6 @@ let welcome () =
 ;;
 
 welcome ();;
-loop ();;
+let (m : Model.model) = [] in
+loop m;;
+
