@@ -5,7 +5,7 @@ IFS=$'\n' read -d '' -r -a lines < build.list
 echo "Using Sources:"
 printf ' * %s\n' "${lines[@]}"
 
-make build folder, copy src into it, and run build
+# make build folder, copy src into it, and run build
 mkdir build && cd build
 cp -r ../src .
 ocamlc -o shrdlu ${lines[@]}
