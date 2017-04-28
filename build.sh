@@ -8,11 +8,12 @@ printf ' * %s\n' "${lines[@]}"
 # make build folder, copy src into it, and run build
 mkdir build && cd build
 cp -r ../src .
+cd src
 ocamlc -o shrdlu ${lines[@]}
 
 # move executable to main directory, clean build
-mv shrdlu ..
-cd ..
+mv shrdlu ../..
+cd ../..
 rm -r build
 
 echo "Done"
