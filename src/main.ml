@@ -1,26 +1,26 @@
+open Model
+open Parser
+
 let prompt () =
   let () = print_string "shrdlu> " in
   read_line ()
-;;
 
 let print_line s =
-  print_string s ; print_newline ()
-;;
+  if s = "" then () else (print_string s ; print_newline ())
 
-let main (m : Model.model) =
+let main (m : model) =
   let input = prompt () in
   if not (List.mem input ["q";"quit";"exit"]) then
-    let () = print_line (Model.perform (Parser.parse input) m) in
-    (true, m)
+    let Response (msg, model) = perform (parse input) m in
+    let () = print_line msg in
+    (true, model)
   else
     (false, m)
-;;
 
-let rec loop (m : Model.model) =
+let rec loop (m : model) =
   match (main m) with
   | (true, n) -> loop n
   | (false, _) -> ()
-;;
 
 let welcome () =
     print_line "Welcome to Shrdlu!" ;
@@ -29,6 +29,6 @@ let welcome () =
 ;;
 
 welcome ();;
-let (m : Model.model) = [] in
+let (m : model) = [] in
 loop m;;
 
