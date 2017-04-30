@@ -109,4 +109,3 @@ let perform (c : command) (m : model) =
   | Print -> print_model m ; Response ("", m)
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
 
-
