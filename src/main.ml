@@ -29,6 +29,6 @@ let welcome () =
 ;;
 
 welcome ();;
-let (m : model) = [] in
+let (m : model) = ([], []) in
 loop m;;
 
