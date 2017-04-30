@@ -9,7 +9,7 @@ let fiveary label ((((child1,child2),child3),child4),child5) = Branch (label,[ch
 type remainder = string list;;
 type 'a combinatorparser = remainder -> ('a * remainder) list;;
 
-let (terminal : string -> tree combinatorparser) myword = function
+let terminal (terminal : string -> tree combinatorparser) myword = function
   x::xs when x=myword -> [((Leaf myword),xs)]
   | _ -> ([] : (tree * remainder) list);;
 
@@ -52,7 +52,6 @@ let wrapper (p : tree combinatorparser) words =
   List.map Pervasives.fst (List.filter finished
            (p (remove_garbage (String.split_on_char ' ' words))));;
 
-
 (* Address finder *)
 exception Tree_not_found;;
 let rec at myTree address =
@@ -62,3 +61,4 @@ let rec at myTree address =
         Leaf(_) -> if [head] = [] then myTree else raise Tree_not_found
     |   Branch(value, tree_list) -> if head >= List.length tree_list then raise Tree_not_found else 
             at (List.nth tree_list head) tail;;
+
