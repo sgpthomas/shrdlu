@@ -52,4 +52,13 @@ let wrapper (p : tree combinatorparser) words =
   List.map Pervasives.fst (List.filter finished
            (p (remove_garbage (String.split_on_char ' ' words))));;
 
-  
+
+(* Address finder *)
+exception Tree_not_found;;
+let rec at myTree address =
+    match address with
+    [] -> myTree
+|   head :: tail -> match myTree with 
+        Leaf(_) -> if [head] = [] then myTree else raise Tree_not_found
+    |   Branch(value, tree_list) -> if head >= List.length tree_list then raise Tree_not_found else 
+            at (List.nth tree_list head) tail;;
