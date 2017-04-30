@@ -2,3 +2,4 @@ shrdlu
 *.cmo
 *.cmi
 .DS_Store
+_build

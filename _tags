@@ -1,0 +1,2 @@
+true: syntax(camlp4o)
+true: package(camlp4)

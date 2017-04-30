@@ -1,7 +1,7 @@
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
 and shape = Cube | Sphere | Pyramid
-and color = Red | Blue | Purple | Green | Yellow | Orange
+and color = Red | Blue | Purple | Green | Yellow | Orange | Colorless
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
@@ -15,6 +15,9 @@ type command =
 type response = Response of string * model
 
 exception No_such_adjacent_exception
+exception No_such_direction_exception
+exception No_such_shape_exception
+exception No_such_color_exception
 
 (* Printing Functions *)
 let string_of_direction = function
@@ -25,10 +28,25 @@ let string_of_direction = function
   | Above -> "above"
   | Below -> "below"
 
+let direction_of_string = function
+  | "left" -> Left
+  | "right" -> Right
+  | "behind" -> Behind
+  | "front" -> Front
+  | "above" -> Above
+  | "below" -> Below
+  | _ -> raise No_such_direction_exception
+
 let string_of_shape = function
   | Cube -> "cube"
   | Sphere -> "sphere"
   | Pyramid -> "pyramid"
+
+let shape_of_string = function
+  | "cube" -> Cube
+  | "sphere" -> Sphere
+  | "pyramid" -> Pyramid
+  | _ -> raise No_such_shape_exception
 
 let string_of_color = function
   | Red -> "red"
@@ -37,6 +55,17 @@ let string_of_color = function
   | Green -> "green"
   | Yellow -> "yellow"
   | Orange -> "orange"
+  | Colorless -> "colorless"
+
+let color_of_string = function
+  | "red" -> Red
+  | "blue" -> Blue
+  | "purple" -> Purple
+  | "green" -> Green
+  | "yellow" -> Yellow
+  | "orange" -> Orange
+  | "colorless" -> Colorless
+  | _ -> raise No_such_color_exception
 
 let opposite_direction = function
   | Left -> Right
@@ -45,6 +74,7 @@ let opposite_direction = function
   | Front -> Behind
   | Above -> Below
   | Below -> Above
+
 
 let genid =
   let n = ref 0 in
@@ -71,7 +101,7 @@ let print_entity (m : model) (e : entity) =
   in
 
   let Entity (id, shape, color) = e in
-  Printf.printf " - %i -> %s %s " id (string_of_color color) (string_of_shape shape) ;
+  Printf.printf " [%i] -> %s %s " id (string_of_color color) (string_of_shape shape) ;
   print_string "(" ; print_adjacent_list (get_adjacent_list m id) ; print_string ")" ; print_newline ()
 
 let print_model (m : model) =
@@ -85,17 +115,36 @@ let print_model (m : model) =
 
 (* Model Functions *)
 let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
-  let flip_adjacent (a : adjacent) = let (dir, id) = a in Adjacent (opposite_direction dir, id) in
+  let flip_adjacent (a : adjacent) =
+    let Adjacent (dir, i) = a in Adjacent (opposite_direction dir, i)
+  in
 
-  List.append numbered (id,  adj_list)
+  let update_number (a : adjacent) (nal : (int * adjacent list)) =
+    let Adjacent (dir, i) = a in
+    let (n, al) = nal in
+    if i = n then
+      (n, List.append al [Adjacent (dir, id)])
+    else
+      nal
+  in
+
+  let update (num : (int * (adjacent list)) list) (a : adjacent) =
+    List.map (update_number a) num
+  in
+
+  let new_numbered = List.append numbered [(id, (List.map flip_adjacent adj_list))] in
+  if List.length adj_list <> 0 then
+    List.hd (List.map (update new_numbered) adj_list)
+  else
+    new_numbered
 
 
 let create (m : model) (e : entity) (adj_list : adjacent list) =
+  let Entity (id, shape, color) = e in
   let (el, al) = m in (* get entities and adjacents *)
   let new_el = List.append el [e] in
-  let new_al = update_adjacents al adj_list in
+  let new_al = update_adjacents al id adj_list in
   let new_model = (new_el, new_al) in
-  let Entity (id, shape, color) = e in
   let msg = Printf.sprintf "created %d: %s %s" id (string_of_color color) (string_of_shape shape) in
   Response (msg, new_model)
 
