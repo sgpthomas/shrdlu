@@ -1,7 +1,5 @@
+open Model
 open Grammar
-
-
-
 
 let parse_command instruction = 
     let first_word = fst (String.split instruction " ") in
@@ -16,3 +14,10 @@ let create instruction =
     | [] -> 
 
 let delete instruction = 
+    "something"
+
+let parse (s : string) =
+  match s with
+  | "create" -> Create (Entity (Cube, Red, []), [])
+  | "print" -> Print
+  | _ -> Error ("Cannot grasp meaning.")

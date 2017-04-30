@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 grammar.ml
 parser.ml
+=======
+>>>>>>> edc44947b69e8866b8b43624a8aea2d646313de9
 model.ml
+parser.ml
 main.ml
