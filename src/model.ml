@@ -85,9 +85,9 @@ let print_model (m : model) =
 
 (* Model Functions *)
 let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
-  let flip_adjacent (a : adjacent) = let (dir, id) = a in Adjacent (opposite_direction dir, id)
+  let flip_adjacent (a : adjacent) = let (dir, id) = a in Adjacent (opposite_direction dir, id) in
 
-  List.append numbered (id, flip_list adj_list)
+  List.append numbered (id,  adj_list)
 
 
 let create (m : model) (e : entity) (adj_list : adjacent list) =
