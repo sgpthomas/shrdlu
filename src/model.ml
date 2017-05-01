@@ -127,25 +127,39 @@ let print_model (m : model) =
 let flip_adjacent (a : adjacent) =
   let Adjacent (dir, i) = a in Adjacent (opposite_direction dir, i)
 
-let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
-  let rec match_entity (el : entity list) =
-    match el with
-    | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color color) (string_of_shape shape)))
-    | Entity (id, s, c)::tl -> if s = shape && c = color then id else match_entity tl
+let get_matches (m : model) ?(color : color option) (shape : shape) (adj_list : adjacent list) =
+  let color = match color with
+    | Some x -> x
+    | None -> Colorless
   in
 
-  let rec match_adjacent (num : (int * (adjacent list)) list) id =
+  let rec match_entity (el : entity list) (result : int list) =
+    match el with
+    | [] -> result
+    | Entity (id, s, c)::tl ->
+      if s = shape && (c = color || color = Colorless) then
+        match_entity tl (List.append result [id])
+      else
+        match_entity tl result
+  in
+
+  let rec match_adjacent (num : (int * (adjacent list)) list) (i : int) =
     match num with
     | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color color) (string_of_shape shape)))
     | (n, al)::tl ->
-      if n = id && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
+      if n = i && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
         n
       else
-        match_adjacent tl id
+        match_adjacent tl i
   in
 
   let (entity_list, adjacent_list) = m in
-  match_adjacent (adjacent_list) (match_entity entity_list)
+  List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
+
+let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
+  match get_matches m ~color:c s adj_list with
+  | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
+  | x -> List.hd x
 
 let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   Response (string_of_int (find_ID m c s adj_list), m)
