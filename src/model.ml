@@ -1,7 +1,7 @@
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
 and shape = Cube | Sphere | Pyramid
-and color = Red | Blue | Purple | Green | Yellow | Orange | Colorless
+and color = Red | Blue | Purple | Green | Yellow | Orange | White
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
@@ -9,8 +9,9 @@ and model = (entity list) * (int * (adjacent list)) list
 type command =
   | Create of entity * adjacent list
   | Delete of int
-  | Find of color * shape * adjacent list
+  | Move of int * adjacent list
   | Paint of int * color
+  | Find of color * shape * adjacent list
   | Print
   | Reset
   | Error of string
@@ -62,7 +63,7 @@ let string_of_color = function
   | Green -> "green"
   | Yellow -> "yellow"
   | Orange -> "orange"
-  | Colorless -> "colorless"
+  | White -> "white"
 
 let color_of_string = function
   | "red" -> Red
@@ -71,7 +72,7 @@ let color_of_string = function
   | "green" -> Green
   | "yellow" -> Yellow
   | "orange" -> Orange
-  | "colorless" -> Colorless
+  | "white" -> White
   | _ -> raise No_such_color_exception
 
 let opposite_direction = function
@@ -127,25 +128,39 @@ let print_model (m : model) =
 let flip_adjacent (a : adjacent) =
   let Adjacent (dir, i) = a in Adjacent (opposite_direction dir, i)
 
-let get_matches (m : model) ?(color : color option) (shape : shape) (adj_list : adjacent list) =
-  let color = match color with
-    | Some x -> x
-    | None -> Colorless
+let entity_of_id (m : model) (id : int) =
+  let rec f (el : entity list) =
+    match el with
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "id: %d" id))
+    | Entity (i, s, c)::tl -> if i = id then Entity (i, s, c) else f tl
   in
+  let (entity_list, _) = m in f entity_list
 
+let get_matches (m : model) ?(color_opt : color option) ?(shape_opt : shape option) (adj_list : adjacent list) =
   let rec match_entity (el : entity list) (result : int list) =
     match el with
     | [] -> result
     | Entity (id, s, c)::tl ->
-      if s = shape && (c = color || color = Colorless) then
-        match_entity tl (List.append result [id])
-      else
-        match_entity tl result
+      match_entity tl (
+        match shape_opt, color_opt with
+        | Some a, Some b -> if a = s && b = c then (List.append result [id]) else result
+        | Some a, None -> if a = s then (List.append result [id]) else result
+        | None, Some b -> if b = c then (List.append result [id]) else result
+        | None, None -> result
+      )
   in
 
   let rec match_adjacent (num : (int * (adjacent list)) list) (i : int) =
+    let color = match color_opt with
+      | Some x -> string_of_color x
+      | None -> ""
+    in
+    let shape = match shape_opt with
+      | Some x -> string_of_shape x
+      | None -> ""
+    in
     match num with
-    | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color color) (string_of_shape shape)))
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" color shape))
     | (n, al)::tl ->
       if n = i && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
         n
@@ -157,7 +172,7 @@ let get_matches (m : model) ?(color : color option) (shape : shape) (adj_list : 
   List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
-  match get_matches m ~color:c s adj_list with
+  match get_matches m ~color_opt:c ~shape_opt:s adj_list with
   | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x
 
@@ -230,6 +245,11 @@ let delete (m : model) (id : int) =
   let msg = Printf.sprintf "deleted %d" id in
   Response (msg, new_model)
 
+let move (m : model) (id : int) (adj_list : adjacent list) =
+  let Response (_, nm) = delete m id in
+  let Response (_, new_model) = create nm (entity_of_id m id) adj_list in
+  Response (Printf.sprintf "moved %d" id, new_model)
+
 let paint (m : model) (id : int) (nc : color) =
   let paint_entity (el : entity list) =
     let re (e : entity) = let Entity (i, s, c) = e in if id = i then [Entity (i, s, nc)] else [e] in
@@ -245,8 +265,9 @@ let perform (c : command) (m : model) =
   match c with
   | Create (ent, adj_list) -> create m ent adj_list
   | Delete (id) -> delete m id
-  | Find (color, shape, adj_list) -> find m color shape adj_list
+  | Move (id, adj_list) -> move m id adj_list
   | Paint (id, new_color) -> paint m id new_color
+  | Find (color, shape, adj_list) -> find m color shape adj_list
   | Print -> print_model m ; Response ("", m)
   | Reset -> Response ("reset model", ([], []))
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)

@@ -8,7 +8,7 @@ let string_of_leaf = function
 
 let rec extract_info (m : model) (instruction : tree) (address : int list) =
     let entity = at instruction address in
-    let color = if ((at entity [0;1]) = (Leaf "0")) then (Leaf "colorless")
+    let color = if ((at entity [0;1]) = (Leaf "0")) then (Leaf "white")
                 else (at entity [0;1;0]) in
     let color = string_of_leaf color in
     let shape = string_of_leaf (at entity [0;2;0]) in
@@ -54,16 +54,17 @@ let paint_command (m : model) (instruction : string) =
     else
       raise Tree_not_found
 
-(* let move_command (m : model) instruction =
+let move_command (m : model) instruction =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
+      let () = List.iteri (writetree) tree_list in
       let tree1 = List.hd tree_list in
       let (c, s, al) = extract_info m tree1 [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
       let new_color = at tree1 [0;2;1;0] in
-      Paint (id, color)
+      Move (3, [Adjacent (Right, 1)])
     else
-      raise Tree_not_found *)
+      raise Tree_not_found
 
 let parse (m : model) (instruction : string) =
   if instruction = "" then Error ("type something") else
@@ -73,7 +74,8 @@ let parse (m : model) (instruction : string) =
       | "create" -> create_command m instruction
       | "delete" -> delete_command m instruction
       | "paint" -> paint_command m instruction
-      (* | "move" -> move_command m instruction *)
+      | "move" -> move_command m instruction
+      | "#move" -> Move (3, [Adjacent (Right, 1)])
       | "#print" -> Print
       | "#reset" -> Reset
       | _ -> Error ("Unable to grasp meaning")
@@ -85,17 +87,3 @@ let parse (m : model) (instruction : string) =
     | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
     | Tree_not_found -> Error ("Failed to parse input")
     (* | _ -> Error ("Something unexpected went wrong") *)
-
-(* let parse (s : string) =
-  match s with
-  | "#create 1" -> Create (Entity (!(genid ()), Cube, Red), [])
-  | "#create 2" -> Create (Entity (!(genid ()), Sphere, Blue), [Adjacent (Right, 1)])
-  | "#create 3" -> Create (Entity (!(genid ()), Pyramid, Yellow), [Adjacent (Front, 2)])
-  | "#create 4" -> Create (Entity (!(genid ()), Sphere, Orange), [Adjacent (Front, 1)])
-  | "#find 1" -> Find (Red, Cube, [Adjacent (Right, 2)])
-  | "#find 2" -> Find (Blue, Sphere, [Adjacent (Left, 1) ; Adjacent (Front, 3)])
-  | "#find 3" -> Find (Yellow, Pyramid, [Adjacent (Behind, 2)])
-  | "#find 4" -> Find (Orange, Sphere, [Adjacent (Behind, 1)])
-  | "#find 5" -> Find (Red, Cube, [Adjacent (Right, 2) ; Adjacent (Behind, 4)])
-  | "#print" -> Print
-  | _ -> Error ("Cannot grasp meaning.") *)
