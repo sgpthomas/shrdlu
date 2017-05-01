@@ -213,8 +213,15 @@ let delete (m : model) (id : int) =
   let msg = Printf.sprintf "deleted %d" id in
   Response (msg, new_model)
 
-let paint (m : model) (e : int) (nc : color) =
-  Response ("nyi", m)
+let paint (m : model) (id : int) (nc : color) =
+  let recolor (e : entity) =
+    let Entity (i, shape, _) = e in if i = id then Entity (i, shape, nc) else e
+  in
+
+  let (el, al) = m in
+  let new_model = (List.map recolor el, al) in
+  let msg = Printf.sprintf "Painted %d %s" id (string_of_color nc) in
+  Response (msg, new_model)
 
 let perform (c : command) (m : model) =
   match c with
