@@ -3,7 +3,7 @@ open Parser
 
 let prompt () =
   let () = print_string "shrdlu> " in
-  read_line ()
+  String.lowercase_ascii (read_line ())
 
 let print_line s =
   if s = "" then () else (print_string s ; print_newline ())

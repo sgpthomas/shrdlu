@@ -21,7 +21,7 @@ exception No_such_adjacent_exception
 exception No_such_direction_exception
 exception No_such_shape_exception
 exception No_such_color_exception
-exception No_such_entity_exception
+exception No_such_entity_exception of string
 
 (* Printing Functions *)
 let string_of_direction = function
@@ -95,17 +95,19 @@ let get_adjacent_list (m : model) (id : int) =
   let (_, al) = m in
   find_adjacent al
 
-let print_entity (m : model) (e : entity) =
-  let print_adjacent a =
+let print_adjacent_list al =
+  let pa a =
     let Adjacent (dir, id) = a in
     Printf.printf " %s: %i " (string_of_direction dir) id
   in
-  let rec print_adjacent_list al =
+  let rec pal al =
     match al with
     | [] -> ()
-    | a::tl -> print_adjacent a ; print_adjacent_list tl
+    | a::tl -> pa a ; pal tl
   in
+  pal al
 
+let print_entity (m : model) (e : entity) =
   let Entity (id, shape, color) = e in
   Printf.printf " [%i] -> %s %s " id (string_of_color color) (string_of_shape shape) ;
   print_string "(" ; print_adjacent_list (get_adjacent_list m id) ; print_string ")" ; print_newline ()
@@ -128,13 +130,13 @@ let flip_adjacent (a : adjacent) =
 let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
   let rec match_entity (el : entity list) =
     match el with
-    | [] -> raise No_such_entity_exception
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color color) (string_of_shape shape)))
     | Entity (id, s, c)::tl -> if s = shape && c = color then id else match_entity tl
   in
 
   let rec match_adjacent (num : (int * (adjacent list)) list) id =
     match num with
-    | [] -> raise No_such_entity_exception
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color color) (string_of_shape shape)))
     | (n, al)::tl ->
       if n = id && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
         n

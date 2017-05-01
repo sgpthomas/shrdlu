@@ -66,6 +66,7 @@ let paint_command model instruction =
       raise Tree_not_found *)
 
 let parse model instruction =
+  if instruction = "" then Error ("type something") else
     let first_word = List.hd (String.split_on_char ' ' instruction) in
     try
       match first_word with
@@ -81,7 +82,7 @@ let parse model instruction =
     | No_such_direction_exception -> Error ("No such direction")
     | No_such_shape_exception -> Error ("No such shape")
     | No_such_color_exception -> Error ("No such color")
-    | No_such_entity_exception -> Error ("No such entity")
+    | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
     | Tree_not_found -> Error ("Failed to parse input")
     (* | _ -> Error ("Something unexpected went wrong") *)
 
