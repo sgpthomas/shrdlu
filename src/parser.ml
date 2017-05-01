@@ -10,9 +10,10 @@ let rec extract_info model instruction_tree address =
     let Leaf(shape) = at entity [0;2;0] in
     let temp_direction = at entity [0;3] in
     let adjacent = if temp_direction = Leaf("0") then [] else
-    let direction = if ((at entity [0;3;0;0]) = (Leaf "the") || (at entity [0;3;0;0]) = (Leaf "0"))
-                    then (at entity [0;3;0;1])
-                    else (at entity [0;3;0;0]) in
+    let adj_address = if (temp_direction = Leaf("that")) then 4 else 3 in
+    let direction = if ((at entity [0;adj_address;0;0]) = (Leaf "the") || (at entity [0;adj_address;0;0]) = (Leaf "0"))
+                    then (at entity [0;adj_address;0;1])
+                    else (at entity [0;adj_address;0;0]) in
     let Leaf(direction) = direction in
     let (c, s, al) = extract_info model entity [0;3;1] in
     let adjacent_entity = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
@@ -28,11 +29,46 @@ let create_command model instruction =
     else
       raise Tree_not_found
 
+let delete_command model instruction =
+    let tree_list = (wrapper command instruction) in
+    if List.length tree_list <> 0 then
+      let tree1 = List.hd tree_list in
+      let (c, s, al) = extract_info model tree1 [0;1] in
+      let id = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
+      Delete (id)
+    else
+      raise Tree_not_found
+
+let paint_command model instruction =
+    let tree_list = (wrapper command instruction) in
+    if List.length tree_list <> 0 then
+      let tree1 = List.hd tree_list in
+      let (c, s, al) = extract_info model tree1 [0;1] in
+      let id = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
+      let new_color = at tree1 [0;2;1;0] in
+      Paint (id, color)
+    else
+      raise Tree_not_found
+
+let move_command mode instruction = 
+    let tree_list = (wrapper command instruction) in
+    if List.length tree_list <> 0 then
+      let tree1 = List.hd tree_list in
+      let (c, s, al) = extract_info model tree1 [0;1] in
+      let id = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
+      let new_color = at tree1 [0;2;1;0] in
+      Paint (id, color)
+    else
+      raise Tree_not_found
+
 let parse model instruction =
     let first_word = List.hd (String.split_on_char ' ' instruction) in
     try
       match first_word with
       | "create" -> create_command model instruction
+      | "delete" -> delete_command model instruction
+      | "paint" -> paint_command model instruction
+      | "move" -> move_command model instruction
       | "#print" -> Print
       | _ -> Error ("Unable to grasp meaning")
     with

@@ -9,6 +9,7 @@ and model = (entity list) * (int * (adjacent list)) list
 type command =
   | Create of entity * adjacent list
   | Delete of entity * adjacent list
+  | Paint of int * string
   | Error of string
   | Print
 
@@ -184,10 +185,14 @@ let delete (m : model) (e : entity) (al : adjacent list) =
   let msg = Printf.sprintf "deleted %d: %s %s, not actually" id (string_of_color color) (string_of_shape shape) in
   Response (msg, m)
 
+let paint (m : model) (e : id) (nc : string) =
+
+
 let perform (c : command) (m : model) =
   match c with
   | Create (ent, adj_list) -> create m ent adj_list
   | Delete (ent, adj_list) -> delete m ent adj_list
+  | Paint (id, new_color) -> paint m id new_color
   | Print -> print_model m ; Response ("", m)
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
 
