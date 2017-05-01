@@ -37,7 +37,7 @@ and thatFulentity words = ( (opt(d) &. opt(color) &. shape &. (terminal "that") 
 and adjacent words = (direction &. entity >. binary "Adjacent") words
 and d = (terminal "the" |. terminal "a") >. unary "D"
 and shape = (terminal "cube" |. terminal "sphere" |. terminal "pyramid") >. unary "Shape"
-and color = (terminal "red" |. terminal "orange" |. terminal "yellow" |. terminal "green" |. terminal "blue" |. terminal "purple") >. unary "Color"
+and color = (terminal "red" |. terminal "orange" |. terminal "yellow" |. terminal "colorless" |. terminal "green" |. terminal "blue" |. terminal "purple") >. unary "Color"
 and direction = ((terminal "above" |. terminal "below" |. terminal "behind" |. terminal "front") >. unary "Direction")
       |. ((opt(terminal "the") &. (terminal "left" |. terminal "right")) >. binary "Direction");;
 

@@ -10,6 +10,7 @@ type command =
   | Create of entity * adjacent list
   | Delete of int
   | Find of color * shape * adjacent list
+  | Paint of int * color
   | Error of string
   | Print
 
@@ -212,11 +213,15 @@ let delete (m : model) (id : int) =
   let msg = Printf.sprintf "deleted %d" id in
   Response (msg, new_model)
 
+let paint (m : model) (e : int) (nc : color) =
+  Response ("nyi", m)
+
 let perform (c : command) (m : model) =
   match c with
   | Create (ent, adj_list) -> create m ent adj_list
   | Delete (id) -> delete m id
   | Find (color, shape, adj_list) -> find m color shape adj_list
+  | Paint (id, new_color) -> paint m id new_color
   | Print -> print_model m ; Response ("", m)
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
 
