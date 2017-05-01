@@ -8,7 +8,8 @@ and model = (entity list) * (int * (adjacent list)) list
 
 type command =
   | Create of entity * adjacent list
-  | Delete of entity * adjacent list
+  | Delete of int
+  | Find of color * shape * adjacent list
   | Error of string
   | Print
 
@@ -137,6 +138,9 @@ let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent lis
   let (entity_list, adjacent_list) = m in
   match_adjacent adjacent_list (match_entity entity_list)
 
+let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
+  Response (string_of_int (find_ID m c s adj_list), m)
+
 let create (m : model) (e : entity) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
   let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
@@ -179,15 +183,40 @@ let create (m : model) (e : entity) (adj_list : adjacent list) =
   let msg = Printf.sprintf "created %d: %s %s" id (string_of_color color) (string_of_shape shape) in
   Response (msg, new_model)
 
-let delete (m : model) (e : entity) (al : adjacent list) =
-  let Entity (id, shape, color) = e in
-  let msg = Printf.sprintf "deleted %d: %s %s, not actually" id (string_of_color color) (string_of_shape shape) in
-  Response (msg, m)
+let delete (m : model) (id : int) =
+  (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
+  let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) =
+
+    let remove_row (num : int * adjacent list)  =
+      let (i, _) = num in id <> i
+    in
+
+    let remove_links (num : int * adjacent list) =
+      let (i, al) = num in
+      let f a = let Adjacent (_, i) = a in id <> i in
+      (i, List.filter f al)
+    in
+
+    List.map (remove_links) (List.filter remove_row numbered)
+  in
+
+  let remove_entity (el : entity list) =
+    let re (e : entity) = let Entity (i, _, _) = e in if id = i then [] else [e] in
+    List.flatten (List.map re el)
+  in
+
+  let (el, al) = m in (* get entities and adjacents *)
+  let new_el = remove_entity el in
+  let new_al = update_adjacents al id in
+  let new_model = (new_el, new_al) in
+  let msg = Printf.sprintf "deleted %d" id in
+  Response (msg, new_model)
 
 let perform (c : command) (m : model) =
   match c with
   | Create (ent, adj_list) -> create m ent adj_list
-  | Delete (ent, adj_list) -> delete m ent adj_list
+  | Delete (id) -> delete m id
+  | Find (color, shape, adj_list) -> find m color shape adj_list
   | Print -> print_model m ; Response ("", m)
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
 

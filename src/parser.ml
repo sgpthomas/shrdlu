@@ -34,6 +34,7 @@ let parse model instruction =
       match first_word with
       | "create" -> create_command model instruction
       | "#print" -> Print
+      | "#find" -> Find (Red, Cube, [])
       | _ -> Error ("Unable to grasp meaning")
     with
     | No_such_adjacent_exception -> Error ("No such adjacent")
