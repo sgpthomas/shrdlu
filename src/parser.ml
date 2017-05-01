@@ -15,7 +15,7 @@ let rec extract_info model instruction_tree address =
                     then (at entity [0;adj_address;0;1])
                     else (at entity [0;adj_address;0;0]) in
     let Leaf(direction) = direction in
-    let (c, s, al) = extract_info model entity [0;3;1] in
+    let (c, s, al) = extract_info model entity [0;adj_address;1] in
     let adjacent_entity = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
     [(direction,adjacent_entity)] in
     (color,shape,adjacent);;
@@ -45,21 +45,21 @@ let paint_command model instruction =
       let tree1 = List.hd tree_list in
       let (c, s, al) = extract_info model tree1 [0;1] in
       let id = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-      let Leaf(new_color) = at tree1 [0;2;1;0] in
+      let Leaf(new_color) = at tree1 [0;2;0] in
       Paint (id, color_of_string new_color)
     else
       raise Tree_not_found
 
-(* let move_command mode instruction = *)
-(*     let tree_list = (wrapper command instruction) in *)
-(*     if List.length tree_list <> 0 then *)
-(*       let tree1 = List.hd tree_list in *)
-(*       let (c, s, al) = extract_info model tree1 [0;1] in *)
-(*       let id = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in *)
-(*       let new_color = at tree1 [0;2;1;0] in *)
-(*       Paint (id, color) *)
-(*     else *)
-(*       raise Tree_not_found *)
+(* let move_command mode instruction =
+    let tree_list = (wrapper command instruction) in
+    if List.length tree_list <> 0 then
+      let tree1 = List.hd tree_list in
+      let (c, s, al) = extract_info model tree1 [0;1] in
+      let id = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
+      let new_color = at tree1 [0;2;1;0] in
+      Paint (id, color)
+    else
+      raise Tree_not_found *)
 
 let parse model instruction =
     let first_word = List.hd (String.split_on_char ' ' instruction) in
