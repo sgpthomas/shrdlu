@@ -1,14 +1,14 @@
 open Model
-(* open Grammar *)
+open Grammar
 
-let parse instruction = 
+let parse model instruction = 
     let first_word = fst (String.split instruction " ") in
-    if first_word = "create" then create instruction else
+    if first_word = "create" then create model instruction else
     "output to user that they messed up";;
 
 
 
-let rec extract_info instruction_tree address =
+let rec extract_info model instruction_tree address =
     let entity = at instruction_tree address in 
     let color = if ((at entity [0;1]) = (Leaf "0")) then (Leaf "colorless") 
                 else (at entity [0;1;0]) in
@@ -20,24 +20,17 @@ let rec extract_info instruction_tree address =
                     then (at entity [0;3;0;1])
                     else (at entity [0;3;0;0]) in 
     let Leaf(direction) = direction in 
-    let adjacent_entity = find_ID (extract_info entity [0;3;1]) in
+    let (c, s, al) = extract_info model entity [0;3;1] in
+    let adjacent_entity = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
     [(direction,adjacent_entity)] in 
     (color,shape,adjacent);;
 
-let create instruction = 
+let create model instruction = 
     let tree_list = (wrapper command instruction) in
     let tree1 = List.hd tree_list in
-    let color = if ((at tree1 [0;1;0;1]) = (Leaf "0")) then (Leaf "colorless") 
-                else (at tree1 [0;1;0;1;0]) in 
-    let Leaf(color) = color in 
-    let Leaf(shape) = at tree1 [0;1;0;2;0] in
-    let direction = if ((at tree1 [0;1;0;3;0;0]) = (Leaf "the") || (at tree1 [0;1;0;3;0;0]) = (Leaf "0"))
-                    then (at tree1 [0;1;0;3;0;1])
-                    else (at tree1 [0;1;0;3;0;0]) in 
-    let Leaf(direction) = direction in 
-    direction;;
+    extract_info model tree1 [0;1];;
 
-let parse (s : string) =
+(* let parse (s : string) =
   match s with
   | "#create 1" -> Create (Entity (!(genid ()), Cube, Red), [])
   | "#create 2" -> Create (Entity (!(genid ()), Sphere, Blue), [Adjacent (Right, 1)])
@@ -49,6 +42,6 @@ let parse (s : string) =
   | "#find 4" -> Find (Orange, Sphere, [Adjacent (Behind, 1)])
   | "#find 5" -> Find (Red, Cube, [Adjacent (Right, 2) ; Adjacent (Behind, 4)])
   | "#print" -> Print
-  | _ -> Error ("Cannot grasp meaning.")
+  | _ -> Error ("Cannot grasp meaning.") *)
 
 ["create";"red";"cube";""]

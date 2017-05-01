@@ -39,6 +39,9 @@ let direction_of_string = function
   | "below" -> Below
   | _ -> raise No_such_direction_exception
 
+let adjacent_of_string = function
+  | (dir, id) -> Adjacent (direction_of_string dir, id)
+
 let string_of_shape = function
   | Cube -> "cube"
   | Sphere -> "sphere"
@@ -134,8 +137,7 @@ let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent lis
   in
 
   let (entity_list, adjacent_list) = m in
-  let msg = string_of_int (match_adjacent adjacent_list (match_entity entity_list)) in
-  Response (msg, m)
+  match_adjacent adjacent_list (match_entity entity_list)
 
 let create (m : model) (e : entity) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)

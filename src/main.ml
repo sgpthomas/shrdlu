@@ -11,7 +11,7 @@ let print_line s =
 let main (m : model) =
   let input = prompt () in
   if not (List.mem input ["q";"quit";"exit"]) then
-    let Response (msg, model) = perform (parse input) m in
+    let Response (msg, model) = perform (parse m input) m in
     let () = print_line msg in
     (true, model)
   else
