@@ -8,8 +8,14 @@ let string_of_leaf = function
 
 let rec extract_info (m : model) (instruction : tree) (address : int list) =
     let entity = at instruction address in
-    let color = if ((at entity [0;1]) = (Leaf "0")) then (Leaf "white")
-                else (at entity [0;1;0]) in
+    let color =
+      if ((at entity [0;1]) = (Leaf "0")) then
+        if (at instruction [0;0] = Leaf "create") then
+          (Leaf "white")
+        else
+          (Leaf "colorless")
+      else
+        (at entity [0;1;0]) in
     let color = string_of_leaf color in
     let shape = string_of_leaf (at entity [0;2;0]) in
     let temp_direction = at entity [0;3] in
@@ -23,6 +29,23 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     let adjacent_entity = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
     [(direction,adjacent_entity)] in
     (color,shape,adjacent)
+
+let resolve_ambiguity (tl : tree list) =
+  let sz = List.length tl in
+  if sz = 1 then
+    List.hd tl
+  else
+    begin
+      Printf.printf "%d possible interpretations.\n" sz ;
+      let rec p () =
+        Printf.printf "enter 1-%d to choose:\n -> " sz ;
+        try
+          let choice = read_int () in List.nth tl (choice-1)
+        with
+        | _ -> p ()
+      in
+      p ()
+    end
 
 let create_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
@@ -58,7 +81,7 @@ let move_command (m : model) instruction =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
       let () = List.iteri (writetree) tree_list in
-      let tree1 = List.hd tree_list in
+      let tree1 = resolve_ambiguity tree_list in
       let (c, s, al) = extract_info m tree1 [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
       let new_color = at tree1 [0;2;1;0] in

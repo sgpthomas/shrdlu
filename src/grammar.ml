@@ -96,3 +96,7 @@ let writetree i t =
   let _ = Sys.command (Printf.sprintf "dot -Tpng %s -O" name) in
   let _ = Sys.command (Printf.sprintf "rm %s" name) in
   ()
+
+let produce_trees (sl : string list) =
+  let tl = List.flatten (List.map (wrapper command) sl) in
+  List.iteri writetree tl
