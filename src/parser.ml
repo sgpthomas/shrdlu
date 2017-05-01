@@ -1,34 +1,36 @@
 open Model
 open Grammar
-
-let parse model instruction = 
-    let first_word = fst (String.split instruction " ") in
-    if first_word = "create" then create model instruction else
-    "output to user that they messed up";;
-
-
+open Batteries
 
 let rec extract_info model instruction_tree address =
-    let entity = at instruction_tree address in 
-    let color = if ((at entity [0;1]) = (Leaf "0")) then (Leaf "colorless") 
+    let entity = at instruction_tree address in
+    let color = if ((at entity [0;1]) = (Leaf "0")) then (Leaf "colorless")
                 else (at entity [0;1;0]) in
-    let Leaf(color) = color in 
+    let Leaf(color) = color in
     let Leaf(shape) = at entity [0;2;0] in
     let temp_direction = at entity [0;3] in
     let adjacent = if temp_direction = Leaf("0") then [] else
     let direction = if ((at entity [0;3;0;0]) = (Leaf "the") || (at entity [0;3;0;0]) = (Leaf "0"))
                     then (at entity [0;3;0;1])
-                    else (at entity [0;3;0;0]) in 
-    let Leaf(direction) = direction in 
+                    else (at entity [0;3;0;0]) in
+    let Leaf(direction) = direction in
     let (c, s, al) = extract_info model entity [0;3;1] in
     let adjacent_entity = find_ID model (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-    [(direction,adjacent_entity)] in 
+    [(direction,adjacent_entity)] in
     (color,shape,adjacent);;
 
-let create model instruction = 
+let create_command model instruction =
     let tree_list = (wrapper command instruction) in
     let tree1 = List.hd tree_list in
-    extract_info model tree1 [0;1];;
+    let (c, s, al) = extract_info model tree1 [0;1] in
+    Create (Entity (!(genid ()), (shape_of_string s), (color_of_string c)), (List.map adjacent_of_string al))
+
+let parse model instruction =
+    let first_word = fst (String.split instruction " ") in
+    match first_word with
+    | "create" -> create_command model instruction
+    | "#print" -> Print
+    (* | _ -> Error ("Cannot grasp meaning") *)
 
 (* let parse (s : string) =
   match s with
@@ -43,5 +45,3 @@ let create model instruction =
   | "#find 5" -> Find (Red, Cube, [Adjacent (Right, 2) ; Adjacent (Behind, 4)])
   | "#print" -> Print
   | _ -> Error ("Cannot grasp meaning.") *)
-
-["create";"red";"cube";""]

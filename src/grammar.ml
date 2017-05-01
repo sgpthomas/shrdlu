@@ -9,7 +9,7 @@ let fiveary label ((((child1,child2),child3),child4),child5) = Branch (label,[ch
 type remainder = string list;;
 type 'a combinatorparser = remainder -> ('a * remainder) list;;
 
-let terminal (terminal : string -> tree combinatorparser) myword = function
+let (terminal : string -> tree combinatorparser) myword = function
   x::xs when x=myword -> [((Leaf myword),xs)]
   | _ -> ([] : (tree * remainder) list);;
 
