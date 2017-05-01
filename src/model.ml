@@ -126,16 +126,6 @@ let flip_adjacent (a : adjacent) =
   let Adjacent (dir, i) = a in Adjacent (opposite_direction dir, i)
 
 let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
-  let print_adjacent a =
-    let Adjacent (dir, id) = a in
-    Printf.printf " %s: %i " (string_of_direction dir) id
-  in
-  let rec print_adjacent_list al =
-    match al with
-    | [] -> ()
-    | a::tl -> print_adjacent a ; print_adjacent_list tl
-  in
-  let () = Printf.printf "%s %s" (string_of_color color) (string_of_shape shape) in let () = print_adjacent_list adj_list ; print_newline () in
   let rec match_entity (el : entity list) =
     match el with
     | [] -> raise No_such_entity_exception
@@ -161,7 +151,6 @@ let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
 let create (m : model) (e : entity) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
   let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
-
 
     (* If the id of the adjacent matches the id of the numbered row, add adjacent to that row *)
     let update_number (a : adjacent) (nal : (int * adjacent list)) =

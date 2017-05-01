@@ -93,6 +93,6 @@ let writetree i t =
   let oc = open_out name in
   output_string oc (dot_of_tree name t);
   close_out oc;
-  Sys.command (Printf.sprintf "dot -Tpng %s -O" name);
-  Sys.command (Printf.sprintf "rm %s" name);
+  let _ = Sys.command (Printf.sprintf "dot -Tpng %s -O" name) in
+  let _ = Sys.command (Printf.sprintf "rm %s" name) in
   ()
