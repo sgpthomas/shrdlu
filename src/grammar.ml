@@ -42,7 +42,7 @@ and direction = ((terminal "above" |. terminal "below" |. terminal "behind" |. t
       |. ((opt(terminal "the") &. (terminal "left" |. terminal "right")) >. binary "Direction");;
 
 (* Wrapper that parses the sentence *)
-let wrapper (p : tree combinatorparser) words = 
+let wrapper (p : tree combinatorparser) words =
   let remove_garbage words =
     let predicate x = (x <> "to") && (x <> "in") && (x <> "of") && (x <> "is") in List.filter predicate words
   in

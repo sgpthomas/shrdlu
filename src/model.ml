@@ -79,7 +79,6 @@ let opposite_direction = function
   | Above -> Below
   | Below -> Above
 
-
 let genid =
   let n = ref 0 in
   function () -> n := (!n) + 1 ; n

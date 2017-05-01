@@ -1,2 +1,3 @@
 true: syntax(camlp4o)
 true: package(camlp4), package(pa_comprehension), package(batteries)
+true: bin_annot

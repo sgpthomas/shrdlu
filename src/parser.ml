@@ -21,16 +21,28 @@ let rec extract_info model instruction_tree address =
 
 let create_command model instruction =
     let tree_list = (wrapper command instruction) in
-    let tree1 = List.hd tree_list in
-    let (c, s, al) = extract_info model tree1 [0;1] in
-    Create (Entity (!(genid ()), (shape_of_string s), (color_of_string c)), (List.map adjacent_of_string al))
+    if List.length tree_list <> 0 then
+      let tree1 = List.hd tree_list in
+      let (c, s, al) = extract_info model tree1 [0;1] in
+      Create (Entity (!(genid ()), (shape_of_string s), (color_of_string c)), (List.map adjacent_of_string al))
+    else
+      raise Tree_not_found
 
 let parse model instruction =
-    let first_word = fst (String.split instruction " ") in
-    match first_word with
-    | "create" -> create_command model instruction
-    | "#print" -> Print
-    (* | _ -> Error ("Cannot grasp meaning") *)
+    let first_word = List.hd (String.split_on_char ' ' instruction) in
+    try
+      match first_word with
+      | "create" -> create_command model instruction
+      | "#print" -> Print
+      | _ -> Error ("Unable to grasp meaning")
+    with
+    | No_such_adjacent_exception -> Error ("No such adjacent")
+    | No_such_direction_exception -> Error ("No such direction")
+    | No_such_shape_exception -> Error ("No such shape")
+    | No_such_color_exception -> Error ("No such color")
+    | No_such_entity_exception -> Error ("No such entity")
+    | Tree_not_found -> Error ("Failed to parse input")
+    (* | _ -> Error ("Something unexpected went wrong") *)
 
 (* let parse (s : string) =
   match s with
