@@ -11,8 +11,9 @@ type command =
   | Delete of int
   | Find of color * shape * adjacent list
   | Paint of int * color
-  | Error of string
   | Print
+  | Reset
+  | Error of string
 
 type response = Response of string * model
 
@@ -118,8 +119,23 @@ let print_model (m : model) =
   let (el, _) = m in
   f el
 
-(* Model Functions *)
+(****** Model Functions ******)
+
+(* Reverse the direction of an adjacent *)
+let flip_adjacent (a : adjacent) =
+  let Adjacent (dir, i) = a in Adjacent (opposite_direction dir, i)
+
 let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
+  let print_adjacent a =
+    let Adjacent (dir, id) = a in
+    Printf.printf " %s: %i " (string_of_direction dir) id
+  in
+  let rec print_adjacent_list al =
+    match al with
+    | [] -> ()
+    | a::tl -> print_adjacent a ; print_adjacent_list tl
+  in
+  let () = Printf.printf "%s %s" (string_of_color color) (string_of_shape shape) in let () = print_adjacent_list adj_list ; print_newline () in
   let rec match_entity (el : entity list) =
     match el with
     | [] -> raise No_such_entity_exception
@@ -130,14 +146,14 @@ let find_ID (m : model) (color : color) (shape : shape) (adj_list : adjacent lis
     match num with
     | [] -> raise No_such_entity_exception
     | (n, al)::tl ->
-      if n = id && List.for_all (fun x -> List.mem x al) adj_list then
+      if n = id && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
         n
       else
         match_adjacent tl id
   in
 
   let (entity_list, adjacent_list) = m in
-  match_adjacent adjacent_list (match_entity entity_list)
+  match_adjacent (adjacent_list) (match_entity entity_list)
 
 let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   Response (string_of_int (find_ID m c s adj_list), m)
@@ -146,10 +162,6 @@ let create (m : model) (e : entity) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
   let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
 
-    (* Reverse the direction of an adjacent *)
-    let flip_adjacent (a : adjacent) =
-      let Adjacent (dir, i) = a in Adjacent (opposite_direction dir, i)
-    in
 
     (* If the id of the adjacent matches the id of the numbered row, add adjacent to that row *)
     let update_number (a : adjacent) (nal : (int * adjacent list)) =
@@ -214,13 +226,14 @@ let delete (m : model) (id : int) =
   Response (msg, new_model)
 
 let paint (m : model) (id : int) (nc : color) =
-  let recolor (e : entity) =
-    let Entity (i, shape, _) = e in if i = id then Entity (i, shape, nc) else e
+  let paint_entity (el : entity list) =
+    let re (e : entity) = let Entity (i, s, c) = e in if id = i then [Entity (i, s, nc)] else [e] in
+    List.flatten (List.map re el)
   in
 
   let (el, al) = m in
-  let new_model = (List.map recolor el, al) in
-  let msg = Printf.sprintf "Painted %d %s" id (string_of_color nc) in
+  let new_model = (paint_entity el, al) in
+  let msg = Printf.sprintf "painted %d %s" id (string_of_color nc) in
   Response (msg, new_model)
 
 let perform (c : command) (m : model) =
@@ -230,5 +243,6 @@ let perform (c : command) (m : model) =
   | Find (color, shape, adj_list) -> find m color shape adj_list
   | Paint (id, new_color) -> paint m id new_color
   | Print -> print_model m ; Response ("", m)
+  | Reset -> Response ("reset model", ([], []))
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
 

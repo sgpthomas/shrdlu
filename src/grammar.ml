@@ -48,7 +48,8 @@ let wrapper (p : tree combinatorparser) words =
   in
   let finished analysis = match analysis with
     | (_,[]) -> true
-    | _ -> false  in
+    | _ -> false
+  in
   List.map Pervasives.fst (List.filter finished
                              (p (remove_garbage (String.split_on_char ' ' words))))
 
@@ -62,3 +63,36 @@ let rec at myTree address =
     | Branch(value, tree_list) -> if head >= List.length tree_list then raise Tree_not_found else
         at (List.nth tree_list head) tail
 
+let dot_of_tree title t =
+  let rec dot_of_node i = function
+      Leaf name ->  (("n"^(string_of_int i)^" [label = \""^name^"\"];\n"),i)
+    | Branch (parent,kids) ->
+        let (rootbyindexlist,maximum) = List.fold_left (fun (sofar,index) kid ->
+          let (result,newindex) = dot_of_node (index+1) kid in
+          ((result,(index+1))::sofar,newindex)
+                                        )
+            ([],i)
+            kids in
+        let thisnode = ("n"^(string_of_int i)^" [label = \""^parent^"\"];\n") in
+        let downarrows = List.fold_left (fun already (subtree,index) ->
+          ("n"^(string_of_int i)^"-> n"^(string_of_int index)^";\n"^already)
+                        )
+            ""
+            rootbyindexlist in
+        let subtreedot = List.fold_left (fun already (subtree,index) ->
+                                             subtree^already)
+            ""
+            rootbyindexlist in
+        (thisnode^downarrows^subtreedot,maximum)
+
+ in
+  ("digraph \""^title^"\" {\n node [shape = plaintext]; \n edge [arrowhead = none]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}")
+
+let writetree i t =
+  let name = Printf.sprintf "tree%i" i in
+  let oc = open_out name in
+  output_string oc (dot_of_tree name t);
+  close_out oc;
+  Sys.command (Printf.sprintf "dot -Tpng %s -O" name);
+  Sys.command (Printf.sprintf "rm %s" name);
+  ()
