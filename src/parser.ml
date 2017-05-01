@@ -30,17 +30,34 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     [(direction,adjacent_entity)] in
     (color,shape,adjacent)
 
+let bracket_tree (tr : tree) =
+  let rec get_all_leaves (sl : string list) (t : tree) =
+    match t with
+    | Leaf (s) -> List.append sl [s]
+    | Branch (s, tree_list) -> List.flatten (List.map (get_all_leaves sl) tree_list)
+  in
+
+  let rec string_of_list = function
+    | [] -> ""
+    | hd::tl -> hd ^ " " ^ (string_of_list tl)
+  in
+
+  match at tr [0] with
+  | Leaf (s) -> Printf.sprintf "( %s )" s
+  | Branch (s, tree_list) ->
+    String.filter (fun x -> x <> '0') (string_of_list ( (List.map (fun l -> "( " ^ string_of_list l ^ ")") (List.map (fun t -> (get_all_leaves []) t) tree_list))))
+
 let resolve_ambiguity (tl : tree list) =
   let sz = List.length tl in
   if sz = 1 then
     List.hd tl
   else
     begin
-      Printf.printf "%d possible interpretations.\n" sz ;
+      List.iteri (fun i t -> Printf.printf " [%d] -> %s\n" i (bracket_tree t)) tl ;
       let rec p () =
-        Printf.printf "enter 1-%d to choose:\n -> " sz ;
+        Printf.printf "enter 0-%d to choose:\n -> " (sz-1) ;
         try
-          let choice = read_int () in List.nth tl (choice-1)
+          let choice = read_int () in List.nth tl (choice)
         with
         | _ -> p ()
       in
@@ -50,7 +67,7 @@ let resolve_ambiguity (tl : tree list) =
 let create_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let tree1 = List.hd tree_list in
+      let tree1 = resolve_ambiguity tree_list in
       let (c, s, al) = extract_info m tree1 [0;1] in
       Create (Entity (!(genid ()), (shape_of_string s), (color_of_string c)), (List.map adjacent_of_string al))
     else
@@ -59,7 +76,7 @@ let create_command (m : model) (instruction : string) =
 let delete_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let tree1 = List.hd tree_list in
+      let tree1 = resolve_ambiguity tree_list in
       let (c, s, al) = extract_info m tree1 [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
       Delete (id)
@@ -69,7 +86,7 @@ let delete_command (m : model) (instruction : string) =
 let paint_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let tree1 = List.hd tree_list in
+      let tree1 = resolve_ambiguity tree_list in
       let (c, s, al) = extract_info m tree1 [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
       let new_color = string_of_leaf (at tree1 [0;2;0]) in

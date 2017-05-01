@@ -3,3 +3,4 @@ shrdlu
 *.cmi
 .DS_Store
 _build
+.merlin
