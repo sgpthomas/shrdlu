@@ -3,7 +3,7 @@ open Parser
 open Util
 
 let prompt () =
-  let () = print_color "shrdlu> " AnsiWhite in
+  let () = print_color "shrdlu> " AnsiDarkGrey in
   String.lowercase_ascii (read_line ())
 
 let main (m : model) =
@@ -21,8 +21,8 @@ let rec loop (m : model) =
   | (false, _) -> ()
 
 let welcome () =
-    print_color "Welcome to Shrdlu!" AnsiBoldGrey; print_newline () ;
-    print_color "Type 'q', 'quit', or 'exit' to escape." AnsiBoldGrey ; print_newline () ;
+    print_color "Welcome to Shrdlu!" AnsiDarkGrey; print_newline () ;
+    print_color "Type 'q', 'quit', or 'exit' to escape." AnsiDarkGrey ; print_newline () ;
     ()
 ;;
 

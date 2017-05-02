@@ -37,12 +37,10 @@ let bracket_tree (tr : tree) =
     | Leaf (s) -> List.append sl [s]
     | Branch (s, tree_list) -> List.flatten (List.map (get_all_leaves sl) tree_list)
   in
-
   let rec string_of_list = function
     | [] -> ""
     | hd::tl -> hd ^ " " ^ (string_of_list tl)
   in
-
   match at tr [0] with
   | Leaf (s) -> Printf.sprintf "( %s )" s
   | Branch (s, tree_list) ->
@@ -65,66 +63,72 @@ let resolve_ambiguity (tl : tree list) =
       p ()
     end
 
-let create_command (m : model) (instruction : tree) =
-      let (c, s, al) = extract_info m instruction [0;1] in
+let get_tree (instruction : string) = 
+    let tree_list = (wrapper command instruction) in
+    if List.length tree_list <> 0 then
+    resolve_ambiguity tree_list
+    else raise Tree_not_found
+
+let create_command (m : model) (instruction : string) =
+    let tree = get_tree instruction in
+      let (c, s, al) = extract_info m tree [0;1] in
       Create (Entity (!(genid ()), (shape_of_string s), (color_of_string c)), (List.map adjacent_of_string al))
 
-let delete_command (m : model) (instruction : tree) =
-      let (c, s, al) = extract_info m instruction [0;1] in
+let delete_command (m : model) (instruction : string) =
+    let tree = get_tree instruction in
+      let (c, s, al) = extract_info m tree [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
       Delete (id)
 
-let paint_command (m : model) (instruction : tree) =
-      let (c, s, al) = extract_info m instruction [0;1] in
+let paint_command (m : model) (instruction : string) =
+    let tree = get_tree instruction in
+      let (c, s, al) = extract_info m tree [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-      let new_color = string_of_leaf (at instruction [0;2;0]) in
+      let new_color = string_of_leaf (at tree [0;2;0]) in
       Paint (id, color_of_string new_color)
 
-let move_command (m : model) (instruction : tree) =
-      let (c, s, al) = extract_info m instruction [0;1] in
+let move_command (m : model) (instruction : string) =
+    let tree = get_tree instruction in
+      let (c, s, al) = extract_info m tree [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-      let (c2, s2, al2) = extract_info m instruction [0;3] in
+      let (c2, s2, al2) = extract_info m tree [0;3] in
       let id2 = find_ID m (color_of_string c2) (shape_of_string s2) (List.map adjacent_of_string al2) in
       let direction =
-        if ((at instruction [0;2;0]) = (Leaf "the") || (at instruction [0;2;0]) = (Leaf "0"))
-        then (at instruction [0;2;1])
-        else (at instruction [0;2;0]) in
+        if ((at tree [0;2;0]) = (Leaf "the") || (at tree [0;2;0]) = (Leaf "0"))
+        then (at tree [0;2;1])
+        else (at tree [0;2;0]) in
       let direction = string_of_leaf direction in
       Move (id, [Adjacent ((direction_of_string direction), id2)])
 
-let exists_command (m : model) (instruction : tree) =
-      let quantifier = quantifier_of_string (string_of_leaf (at instruction [0;0;1;0]))
-      (int_of_string(string_of_leaf (at instruction [0;0;1;1]))) in
-      let (c, s, al) = extract_info m instruction [0;0;2] in
+let exists_command (m : model) (instruction : string) =
+    let tree = get_tree instruction in
+      let quantifier = quantifier_of_string (string_of_leaf (at tree [0;0;1;0]))
+      (int_of_string(string_of_leaf (at tree [0;0;1;1]))) in
+      let (c, s, al) = extract_info m tree [0;0;2] in
       Exist (quantifier, ((color_of_string c),(shape_of_string s),(List.map adjacent_of_string al)))
 
 let parse (m : model) (instruction : string) =
   if instruction = "" then Error ("type something") else
-    let tree_list = (wrapper command instruction) in
-    if List.length tree_list <> 0 then
-    let tree = resolve_ambiguity tree_list in
     let first_word = List.hd (String.split_on_char ' ' instruction) in
     try
       match first_word with
-      | "create" -> create_command m tree
-      | "delete" -> delete_command m tree
-      | "paint" -> paint_command m tree
-      | "move" -> move_command m tree
+      | "create" -> create_command m instruction
+      | "delete" -> delete_command m instruction
+      | "paint" -> paint_command m instruction
+      | "move" -> move_command m instruction
       | "are"
-      | "is" -> exists_command m tree
+      | "is" -> exists_command m instruction
       | "#exists" -> Exist (Exactly (3), (Red, Cube, []))
       | "#move" -> Move (3, [Adjacent (Right, 1)])
       | "#print" -> Print
       | "#reset" -> Reset
       | "#parse" -> List.iteri (writetree) (wrapper command (snd (String.split instruction " "))) ; Error ("parsed tree")
       | _ -> Error ("Unable to grasp meaning")
-      with
-      | No_such_adjacent_exception -> Error ("No such adjacent")
-      | No_such_direction_exception -> Error ("No such direction")
-      | No_such_shape_exception -> Error ("No such shape")
-      | No_such_color_exception -> Error ("No such color")
-      | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
-      | Tree_not_found -> Error ("Failed to parse input")
-      | _ -> Error ("Something unexpected went wrong")
-    else
-      raise Tree_not_found
+    with
+    | No_such_adjacent_exception -> Error ("No such adjacent")
+    | No_such_direction_exception -> Error ("No such direction")
+    | No_such_shape_exception -> Error ("No such shape")
+    | No_such_color_exception -> Error ("No such color")
+    | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
+    | Tree_not_found -> Error ("Failed to parse input")
+    | _ -> Error ("Something unexpected went wrong")

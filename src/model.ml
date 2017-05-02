@@ -1,19 +1,29 @@
 open Util
 
+(* Exceptions *)
+exception No_such_quantifier_exception
+exception No_such_adjacent_exception
+exception No_such_direction_exception
+exception No_such_shape_exception
+exception No_such_color_exception
+exception No_such_entity_exception of string
+
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
 and shape = Cube | Sphere | Pyramid | Object
-and color = Red | Blue | Purple | Green | Yellow | Orange | White | Unknown
+and color = Red | Orange | Yellow | Green | Blue | Purple | White | Unknown
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
 
+(* Used for existence queries *)
 type quantifier =
   | Less of int
   | Least of int
   | Exactly of int
   | Most of int
   | More of int
+
 
 type command =
   | Create of entity * adjacent list
@@ -28,30 +38,7 @@ type command =
 
 type response = Response of string * model
 
-exception No_such_quantifier_exception
-exception No_such_adjacent_exception
-exception No_such_direction_exception
-exception No_such_shape_exception
-exception No_such_color_exception
-exception No_such_entity_exception of string
-
 (* Printing Functions *)
-let string_of_quantifier = function
-  | Less (_) -> "less"
-  | Least (_) -> "least"
-  | Exactly (_) -> "exactly"
-  | Most (_) -> "most"
-  | More (_) -> "more"
-
-let quantifier_of_string (s : string) (n : int) =
-  match s with
-  | "less" -> Less (n)
-  | "least" -> Least (n)
-  | "exactly" -> Exactly (n)
-  | "most" -> Most (n)
-  | "more" -> More (n)
-  | _ -> raise No_such_quantifier_exception
-
 let string_of_direction = function
   | Left -> "left"
   | Right -> "right"
@@ -68,9 +55,6 @@ let direction_of_string = function
   | "above" -> Above
   | "below" -> Below
   | _ -> raise No_such_direction_exception
-
-let adjacent_of_string = function
-  | (dir, id) -> Adjacent (direction_of_string dir, id)
 
 let string_of_shape = function
   | Cube -> "cube"
@@ -106,6 +90,28 @@ let color_of_string = function
   | "unknown" -> Unknown
   | _ -> raise No_such_color_exception
 
+let adjacent_of_string = function
+  | (dir, id) -> Adjacent (direction_of_string dir, id)
+
+let string_of_adjacent = function
+  | Adjacent(dir, id) -> (string_of_direction dir) ^ " " ^ (string_of_int id)
+
+let string_of_quantifier = function
+  | Less (_) -> "less"
+  | Least (_) -> "least"
+  | Exactly (_) -> "exactly"
+  | Most (_) -> "most"
+  | More (_) -> "more"
+
+let quantifier_of_string (s : string) (n : int) =
+  match s with
+  | "less" -> Less (n)
+  | "least" -> Least (n)
+  | "exactly" -> Exactly (n)
+  | "most" -> Most (n)
+  | "more" -> More (n)
+  | _ -> raise No_such_quantifier_exception
+
 let opposite_direction = function
   | Left -> Right
   | Right -> Left
@@ -114,6 +120,7 @@ let opposite_direction = function
   | Above -> Below
   | Below -> Above
 
+(* Function used to create new id's for entities *)
 let genid =
   let n = ref 0 in
   function () -> n := (!n) + 1 ; n
