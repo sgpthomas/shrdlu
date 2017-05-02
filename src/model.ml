@@ -26,6 +26,7 @@ type command =
 
 type response = Response of string * model
 
+exception No_such_quantifier_exception
 exception No_such_adjacent_exception
 exception No_such_direction_exception
 exception No_such_shape_exception
@@ -33,6 +34,22 @@ exception No_such_color_exception
 exception No_such_entity_exception of string
 
 (* Printing Functions *)
+let string_of_quanifier = function
+  | Less (_) -> "less"
+  | Least (_) -> "least"
+  | Exactly (_) -> "exactly"
+  | Most (_) -> "most"
+  | More (_) -> "more"
+
+let quantifier_of_string (s : string) (n : int) =
+  match s with
+  | "less" -> Less (n)
+  | "least" -> Least (n)
+  | "exactly" -> Exactly (n)
+  | "most" -> Most (n)
+  | "more" -> More (n)
+  | _ -> raise No_such_quantifier_exception
+
 let string_of_direction = function
   | Left -> "left"
   | Right -> "right"
