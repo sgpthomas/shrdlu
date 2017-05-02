@@ -1,3 +1,5 @@
+open Util
+
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
 and shape = Cube | Sphere | Pyramid | Object
@@ -137,9 +139,19 @@ let print_adjacent_list al =
   in
   pal al
 
+let get_ansi_of_color = function
+  | Red -> AnsiRed
+  | Blue -> AnsiBlue
+  | Purple -> AnsiPurple
+  | Green -> AnsiGreen
+  | Yellow -> AnsiYellow
+  | Orange -> AnsiOrange
+  | White -> AnsiWhite
+  | Unknown -> AnsiBoldGrey
+
 let print_entity (m : model) (e : entity) =
   let Entity (id, shape, color) = e in
-  Printf.printf " [%i] -> %s %s " id (string_of_color color) (string_of_shape shape) ;
+  print_color (Printf.sprintf " [%i] -> %s %s " id (string_of_color color) (string_of_shape shape)) (get_ansi_of_color (color)) ;
   print_string "(" ; print_adjacent_list (get_adjacent_list m id) ; print_string ")" ; print_newline ()
 
 let print_model (m : model) =
@@ -243,7 +255,7 @@ let create (m : model) (e : entity) (adj_list : adjacent list) =
   let new_el = List.append el [e] in
   let new_al = update_adjacents al id adj_list in
   let new_model = (new_el, new_al) in
-  let msg = Printf.sprintf "created %d: %s %s" id (string_of_color color) (string_of_shape shape) in
+  let msg = Printf.sprintf "created %d: %s %s\n" id (string_of_color color) (string_of_shape shape) in
   Response (msg, new_model)
 
 let delete (m : model) (id : int) =
@@ -272,13 +284,13 @@ let delete (m : model) (id : int) =
   let new_el = remove_entity el in
   let new_al = update_adjacents al id in
   let new_model = (new_el, new_al) in
-  let msg = Printf.sprintf "deleted %d" id in
+  let msg = Printf.sprintf "deleted %d\n" id in
   Response (msg, new_model)
 
 let move (m : model) (id : int) (adj_list : adjacent list) =
   let Response (_, nm) = delete m id in
   let Response (_, new_model) = create nm (entity_of_id m id) adj_list in
-  Response (Printf.sprintf "moved %d" id, new_model)
+  Response (Printf.sprintf "moved %d\n" id, new_model)
 
 let paint (m : model) (id : int) (nc : color) =
   let paint_entity (el : entity list) =
@@ -288,7 +300,7 @@ let paint (m : model) (id : int) (nc : color) =
 
   let (el, al) = m in
   let new_model = (paint_entity el, al) in
-  let msg = Printf.sprintf "painted %d %s" id (string_of_color nc) in
+  let msg = Printf.sprintf "painted %d %s\n" id (string_of_color nc) in
   Response (msg, new_model)
 
 let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj_list : adjacent list) =
@@ -305,7 +317,7 @@ let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj
     | Most (n) -> (List.length res) <= n
     | More (n) -> (List.length res) > n
   in
-  let msg = if b then "yes" else "no" in Response (msg, m)
+  let msg = if b then "yes" else "no" in Response (msg^"\n", m)
 
 let perform (c : command) (m : model) =
   match c with
@@ -316,6 +328,6 @@ let perform (c : command) (m : model) =
   | Find (color, shape, adj_list) -> find m color shape adj_list
   | Exist (quant, (c, s, al)) -> exists m quant c s al
   | Print -> print_model m ; Response ("", m)
-  | Reset -> Response ("reset model", ([], []))
+  | Reset -> Response ("reset model\n", ([], []))
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
 

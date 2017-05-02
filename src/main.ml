@@ -1,18 +1,16 @@
 open Model
 open Parser
+open Util
 
 let prompt () =
-  let () = Printf.printf "%sshrdlu> %s" "\x1b[31m" "\x1b[0m" in
+  let () = print_color "shrdlu> " AnsiWhite in
   String.lowercase_ascii (read_line ())
-
-let print_line s =
-  if s = "" then () else (print_string s ; print_newline ())
 
 let main (m : model) =
   let input = prompt () in
   if not (List.mem input ["q";"quit";"exit"]) then
     let Response (msg, model) = perform (parse m input) m in
-    let () = print_line msg in
+    let () = Printf.printf "%s" msg in
     (true, model)
   else
     (false, m)
@@ -23,8 +21,8 @@ let rec loop (m : model) =
   | (false, _) -> ()
 
 let welcome () =
-    print_line "Welcome to Shrdlu!" ;
-    print_line "Type 'q', 'quit', or 'exit' to escape." ;
+    print_color "Welcome to Shrdlu!" AnsiBoldGrey; print_newline () ;
+    print_color "Type 'q', 'quit', or 'exit' to escape." AnsiBoldGrey ; print_newline () ;
     ()
 ;;
 
