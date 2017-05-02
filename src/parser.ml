@@ -101,8 +101,7 @@ let move_command (m : model) instruction =
       let tree1 = resolve_ambiguity tree_list in
       let (c, s, al) = extract_info m tree1 [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-      let new_color = at tree1 [0;2;1;0] in
-      Move (3, [Adjacent (Right, 1)])
+      Move (id, [Adjacent (Right, 1)])
     else
       raise Tree_not_found
 
@@ -118,6 +117,7 @@ let parse (m : model) (instruction : string) =
       | "#move" -> Move (3, [Adjacent (Right, 1)])
       | "#print" -> Print
       | "#reset" -> Reset
+      | "#parse" -> List.iteri (writetree) (wrapper command (snd (String.split instruction " "))) ; Error ("parsed tree")
       | _ -> Error ("Unable to grasp meaning")
     with
     | No_such_adjacent_exception -> Error ("No such adjacent")
