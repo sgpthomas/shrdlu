@@ -102,7 +102,7 @@ let dot_of_tree title t =
         (thisnode^downarrows^subtreedot,maximum)
 
  in
-  ("digraph \""^title^"\" {\n node [shape = plaintext]; \n edge [arrowhead = none]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}")
+  ("digraph \""^title^"\" {\n graph [bgcolor = \"transparent\"]; \n node [shape = plaintext fontcolor = white]; \n edge [arrowhead = none color = white]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}")
 
 let writetree i t =
   let name = Printf.sprintf "tree%i" i in

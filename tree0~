@@ -1,0 +1,27 @@
+digraph "tree0" {
+ node [shape = plaintext]; 
+ edge [arrowhead = none]; 
+n0 [label = "Command"];
+n0-> n1;
+n1 [label = "Create"];
+n1-> n2;
+n1-> n3;
+n2 [label = "create"];
+n3 [label = "Entity"];
+n3-> n4;
+n3-> n6;
+n4 [label = "D"];
+n4-> n5;
+n5 [label = "a"];
+n6 [label = "thatLessEntity"];
+n6-> n7;
+n6-> n9;
+n6-> n11;
+n7 [label = "Color"];
+n7-> n8;
+n8 [label = "red"];
+n9 [label = "Shape"];
+n9-> n10;
+n10 [label = "cube"];
+n11 [label = "0"];
+}
