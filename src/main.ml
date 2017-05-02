@@ -2,7 +2,7 @@ open Model
 open Parser
 
 let prompt () =
-  let () = print_string "shrdlu> " in
+  let () = Printf.printf "%sshrdlu> %s" "\x1b[31m" "\x1b[0m" in
   String.lowercase_ascii (read_line ())
 
 let print_line s =

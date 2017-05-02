@@ -58,10 +58,13 @@ let wrapper (p : tree combinatorparser) words =
   let swap_list = [("any","least 1");("cubes","cube");("spheres","sphere");("pyramids","pyramid");("one","1");
   				("two","2");("three","3");("four","4");("five","5");("six","6");("seven","7");("eight","8");
   				("nine","9");("ten","10")] in
-  let swap words = 
-  	let helper word = if (List.mem_assoc word swap_list) then
-  	((String.split_on_char ' ' (List.assoc word swap_list))) else [word]
-  in List.map helper words in
+  let swap words =
+  	let helper word =
+     if (List.mem_assoc word swap_list) then
+  	   ((String.split_on_char ' ' (List.assoc word swap_list)))
+     else [word]
+   in
+   List.map helper words in
   let finished analysis = match analysis with
     | (_,[]) -> true
     | _ -> false

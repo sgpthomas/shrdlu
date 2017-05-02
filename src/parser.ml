@@ -116,7 +116,7 @@ let exists_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
       let tree = resolve_ambiguity tree_list in
-      let quantifier = quantifier_of_string (string_of_leaf (at tree [0;0;1;0])) 
+      let quantifier = quantifier_of_string (string_of_leaf (at tree [0;0;1;0]))
       (int_of_string(string_of_leaf (at tree [0;0;1;1]))) in
       let (c, s, al) = extract_info m tree [0;0;2] in
       Exist (quantifier, ((color_of_string c),(shape_of_string s),(List.map adjacent_of_string al)))
@@ -147,4 +147,4 @@ let parse (m : model) (instruction : string) =
     | No_such_color_exception -> Error ("No such color")
     | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
     | Tree_not_found -> Error ("Failed to parse input")
-    (* | _ -> Error ("Something unexpected went wrong") *)
+    | _ -> Error ("Something unexpected went wrong")
