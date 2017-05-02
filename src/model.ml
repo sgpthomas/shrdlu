@@ -34,7 +34,7 @@ exception No_such_color_exception
 exception No_such_entity_exception of string
 
 (* Printing Functions *)
-let string_of_quanifier = function
+let string_of_quantifier = function
   | Less (_) -> "less"
   | Least (_) -> "least"
   | Exactly (_) -> "exactly"
@@ -299,11 +299,11 @@ let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj
     | c, s -> get_matches m ~color:c ~shape:s adj_list
   in
   let b = match quant with
-    | Less (n) -> (List.length res) > n
+    | Less (n) -> (List.length res) < n
     | Least (n) -> (List.length res) >= n
     | Exactly (n) -> (List.length res) = n
     | Most (n) -> (List.length res) <= n
-    | More (n) -> (List.length res) < n
+    | More (n) -> (List.length res) > n
   in
   let msg = if b then "yes" else "no" in Response (msg, m)
 

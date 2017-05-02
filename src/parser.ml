@@ -94,7 +94,7 @@ let paint_command (m : model) (instruction : string) =
     else
       raise Tree_not_found
 
-let move_command (m : model) instruction =
+let move_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
       let tree = resolve_ambiguity tree_list in
@@ -111,6 +111,17 @@ let move_command (m : model) instruction =
     else
       raise Tree_not_found
 
+let exists_command (m : model) (instruction : string) =
+    let tree_list = (wrapper command instruction) in
+    if List.length tree_list <> 0 then
+      let tree = resolve_ambiguity tree_list in
+      let quantifier = quantifier_of_string (string_of_leaf (at tree [0;0;1;0])) 
+      (int_of_string(string_of_leaf (at tree [0;0;1;1]))) in
+      let (c, s, al) = extract_info m tree [0;0;2] in
+      Exist (quantifier, ((color_of_string c),(shape_of_string s),(List.map adjacent_of_string al)))
+    else
+      raise Tree_not_found
+
 let parse (m : model) (instruction : string) =
   if instruction = "" then Error ("type something") else
     let first_word = List.hd (String.split_on_char ' ' instruction) in
@@ -120,6 +131,8 @@ let parse (m : model) (instruction : string) =
       | "delete" -> delete_command m instruction
       | "paint" -> paint_command m instruction
       | "move" -> move_command m instruction
+      | "are"
+      | "is" -> exists_command m instruction
       | "#exists" -> Exist (Exactly (3), (Red, Cube, []))
       | "#move" -> Move (3, [Adjacent (Right, 1)])
       | "#print" -> Print
