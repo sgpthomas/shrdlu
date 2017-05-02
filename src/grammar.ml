@@ -24,9 +24,16 @@ let ( >. ) (p : 'a combinatorparser) f xs =
 (* Define empty and optional *)
 let (empty : tree combinatorparser) words = [((Leaf "0"), words)]
 let opt p = p |. empty
+let (noanswers : ('a * remainder) list) = []
+
+let (any_one_of : string list -> tree combinatorparser) l = function
+    x::xs when (List.mem x l) -> [((Leaf x),xs)]
+    | _ -> noanswers
 
 (* The custom grammar itself *)
-let rec command words = (create |. delete |. paint |. move >. unary "Command") words
+let rec command words = (query |. create |. delete |. paint |. move >. unary "Command") words
+and query words = (exists >. unary "Query") words
+and exists words = ((terminal "there") &. quantifier &. entity >. ternary "Exists") words
 and create words = ((terminal "create") &. entity >. binary "Create") words
 and delete words = ((terminal "delete") &. entity >. binary "Delete") words
 and paint words = ((terminal "paint") &. entity &. color >. ternary "Paint") words
@@ -35,24 +42,32 @@ and entity words = ( opt(d) &. (thatLessentity |. thatFulentity) >. binary "Enti
 and thatLessentity words = (( opt(color) &. shape &. opt(adjacent)) >. ternary "thatLessEntity") words
 and thatFulentity words = (( opt(color) &. shape &. (terminal "that") &. adjacent) >. fourary "thatFulEntity") words
 and adjacent words = (direction &. entity >. binary "Adjacent") words
-and d = (terminal "the" |. terminal "a" |. terminal "an") >. unary "D"
-and shape = (terminal "cube" |. terminal "sphere" |. terminal "pyramid") >. unary "Shape"
-and color = (terminal "red" |. terminal "orange" |. terminal "yellow" |. terminal "white" |. terminal "green" |. terminal "blue" |. terminal "purple") >. unary "Color"
-and direction = ((terminal "above" |. terminal "below" |. terminal "behind" |. terminal "front") >. unary "Direction")
+and quantifier = (any_one_of ["least";"exactly";"most";"more";"less"] &. any_one_of ["1";"2";"3";"4";"5";"6";"7";"8";"9";"10"]) >. binary "Quantifier"
+and d = (any_one_of ["the";"a";"an"]) >. unary "D"
+and shape = (any_one_of ["cube";"sphere";"pyramid"]) >. unary "Shape"
+and color = (any_one_of ["red";"orange";"yellow";"white";"green";"blue";"purple"]) >. unary "Color"
+and direction = ((any_one_of ["above";"below";"behind";"front"]) >. unary "Direction")
       |. ((opt(terminal "the") &. (terminal "left" |. terminal "right")) >. binary "Direction")
 
 (* Wrapper that parses the sentence *)
 let wrapper (p : tree combinatorparser) words =
   let remove_garbage words =
-    let predicate x = (x <> "to") && (x <> "in") && (x <> "of") && (x <> "is") in List.filter predicate words
+  	let remove_list = ["to";"in";"of";"is";"are";"than";"at"] in
+    let predicate x = not (List.mem x remove_list) in List.filter predicate words
   in
-  let swap_list = [("is","are");("any","are")] in
+  let swap_list = [("any","least 1");("cubes","cube");("spheres","sphere");("pyramids","pyramid");("one","1");
+  				("two","2");("three","3");("four","4");("five","5");("six","6");("seven","7");("eight","8");
+  				("nine","9");("ten","10")] in
+  let swap words = 
+  	let helper word = if (List.mem_assoc word swap_list) then
+  	((String.split_on_char ' ' (List.assoc word swap_list))) else [word]
+  in List.map helper words in
   let finished analysis = match analysis with
     | (_,[]) -> true
     | _ -> false
   in
   List.map Pervasives.fst (List.filter finished
-                             (p (remove_garbage (String.split_on_char ' ' words))))
+                             (p (remove_garbage (List.flatten (swap (String.split_on_char ' ' words))))  ))
 
 (* Address finder *)
 exception Tree_not_found
