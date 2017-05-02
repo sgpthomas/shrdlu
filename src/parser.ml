@@ -2,9 +2,10 @@ open Model
 open Grammar
 open Batteries
 
+(* Returns the string of a leaf *)
 let string_of_leaf = function
   | Leaf(str) -> str
-  | _ -> raise Tree_not_found
+  | _ -> raise Not_a_leaf
 
 (* The most important function in parser. Given the address of an entity
  * a tree, it will extract its color, shape, and adjacent entities. Works
@@ -34,9 +35,10 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     ) in
     let (c, s, al) = extract_info m entity [1;adj_address;1] in
     let adjacent_entity = find_ID m c s al in
-  [(direction,adjacent_entity)] in
+  [direction, adjacent_entity] in
   (color_of_string color, shape_of_string shape, (List.map adjacent_of_string adjacent))
 
+(* Brackets the sentence into its top level constituents for disambigatuion purposes *)
 let bracket_tree (tr : tree) =
   let rec get_all_leaves (sl : string list) (t : tree) =
   match t with
@@ -57,6 +59,7 @@ let bracket_tree (tr : tree) =
       )
     )
 
+(* Presents the user with bracketed sentences and asks them to choose one *)
 let resolve_ambiguity (tl : tree list) =
   let sz = List.length tl in
   if sz = 1 then
@@ -141,6 +144,7 @@ let parse (m : model) (instruction : string) =
   | No_such_color_exception -> Error ("No such color")
   | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
   | Tree_not_found -> Error ("Failed to parse input")
+  | Not_a_leaf -> Error ("Called string_of_leaf incorrectly")
   | _ -> Error ("Something unexpected went wrong")
 
 
