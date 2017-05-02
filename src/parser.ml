@@ -67,8 +67,8 @@ let resolve_ambiguity (tl : tree list) =
 let create_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let tree1 = resolve_ambiguity tree_list in
-      let (c, s, al) = extract_info m tree1 [0;1] in
+      let tree = resolve_ambiguity tree_list in
+      let (c, s, al) = extract_info m tree [0;1] in
       Create (Entity (!(genid ()), (shape_of_string s), (color_of_string c)), (List.map adjacent_of_string al))
     else
       raise Tree_not_found
@@ -76,8 +76,8 @@ let create_command (m : model) (instruction : string) =
 let delete_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let tree1 = resolve_ambiguity tree_list in
-      let (c, s, al) = extract_info m tree1 [0;1] in
+      let tree = resolve_ambiguity tree_list in
+      let (c, s, al) = extract_info m tree [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
       Delete (id)
     else
@@ -86,10 +86,10 @@ let delete_command (m : model) (instruction : string) =
 let paint_command (m : model) (instruction : string) =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let tree1 = resolve_ambiguity tree_list in
-      let (c, s, al) = extract_info m tree1 [0;1] in
+      let tree = resolve_ambiguity tree_list in
+      let (c, s, al) = extract_info m tree [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-      let new_color = string_of_leaf (at tree1 [0;2;0]) in
+      let new_color = string_of_leaf (at tree [0;2;0]) in
       Paint (id, color_of_string new_color)
     else
       raise Tree_not_found
@@ -97,11 +97,17 @@ let paint_command (m : model) (instruction : string) =
 let move_command (m : model) instruction =
     let tree_list = (wrapper command instruction) in
     if List.length tree_list <> 0 then
-      let () = List.iteri (writetree) tree_list in
-      let tree1 = resolve_ambiguity tree_list in
-      let (c, s, al) = extract_info m tree1 [0;1] in
+      let tree = resolve_ambiguity tree_list in
+      let (c, s, al) = extract_info m tree [0;1] in
       let id = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
-      Move (id, [Adjacent (Right, 1)])
+      let (c2, s2, al2) = extract_info m tree [0;3] in
+      let id2 = find_ID m (color_of_string c2) (shape_of_string s2) (List.map adjacent_of_string al2) in
+      let direction =
+        if ((at tree [0;2;0]) = (Leaf "the") || (at tree [0;2;0]) = (Leaf "0"))
+        then (at tree [0;2;1])
+        else (at tree [0;2;0]) in
+      let direction = string_of_leaf direction in
+      Move (id, [Adjacent ((direction_of_string direction), id2)])
     else
       raise Tree_not_found
 
