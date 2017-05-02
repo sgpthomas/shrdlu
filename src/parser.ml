@@ -10,6 +10,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     let entity = at instruction address in
     let color =
       if ((at entity [1;0]) = (Leaf "0")) then
+        if (at instruction [0] = Leaf "0") then (Leaf "unknown") else
         if (at instruction [0;0] = Leaf "create") then
           (Leaf "white")
         else
