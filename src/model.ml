@@ -1,10 +1,17 @@
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
-and shape = Cube | Sphere | Pyramid
+and shape = Cube | Sphere | Pyramid | Object
 and color = Red | Blue | Purple | Green | Yellow | Orange | White | Unknown
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
+
+type quantifier =
+  | Less of int
+  | Least of int
+  | Exactly of int
+  | Most of int
+  | More of int
 
 type command =
   | Create of entity * adjacent list
@@ -12,6 +19,7 @@ type command =
   | Move of int * adjacent list
   | Paint of int * color
   | Find of color * shape * adjacent list
+  | Exist of quantifier * (color * shape * adjacent list)
   | Print
   | Reset
   | Error of string
@@ -49,11 +57,13 @@ let string_of_shape = function
   | Cube -> "cube"
   | Sphere -> "sphere"
   | Pyramid -> "pyramid"
+  | Object -> "object"
 
 let shape_of_string = function
   | "cube" -> Cube
   | "sphere" -> Sphere
   | "pyramid" -> Pyramid
+  | "object" -> Object
   | _ -> raise No_such_shape_exception
 
 let string_of_color = function
@@ -138,13 +148,13 @@ let entity_of_id (m : model) (id : int) =
   in
   let (entity_list, _) = m in f entity_list
 
-let get_matches (m : model) ?(color_opt : color option) ?(shape_opt : shape option) (adj_list : adjacent list) =
+let get_matches (m : model) ?(color : color option) ?(shape : shape option) (adj_list : adjacent list) =
   let rec match_entity (el : entity list) (result : int list) =
     match el with
     | [] -> result
     | Entity (id, s, c)::tl ->
       match_entity tl (
-        match shape_opt, color_opt with
+        match shape, color with
         | Some a, Some b -> if a = s && b = c then (List.append result [id]) else result
         | Some a, None -> if a = s then (List.append result [id]) else result
         | None, Some b -> if b = c then (List.append result [id]) else result
@@ -153,11 +163,11 @@ let get_matches (m : model) ?(color_opt : color option) ?(shape_opt : shape opti
   in
 
   let rec match_adjacent (num : (int * (adjacent list)) list) (i : int) =
-    let color = match color_opt with
+    let color = match color with
       | Some x -> string_of_color x
       | None -> ""
     in
-    let shape = match shape_opt with
+    let shape = match shape with
       | Some x -> string_of_shape x
       | None -> ""
     in
@@ -174,7 +184,7 @@ let get_matches (m : model) ?(color_opt : color option) ?(shape_opt : shape opti
   List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
-  let matches = if c = Unknown then get_matches m ~shape_opt:s adj_list else get_matches m ~color_opt:c ~shape_opt:s adj_list in
+  let matches = if c = Unknown then get_matches m ~shape:s adj_list else get_matches m ~color:c ~shape:s adj_list in
   match matches with
   | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x
@@ -264,6 +274,22 @@ let paint (m : model) (id : int) (nc : color) =
   let msg = Printf.sprintf "painted %d %s" id (string_of_color nc) in
   Response (msg, new_model)
 
+let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj_list : adjacent list) =
+  let res = match color, shape with
+    | Unknown, Object -> get_matches m adj_list
+    | Unknown, s -> get_matches m ~shape:s adj_list
+    | c, Object -> get_matches m ~color:c adj_list
+    | c, s -> get_matches m ~color:c ~shape:s adj_list
+  in
+  let b = match quant with
+    | Less (n) -> (List.length res) > n
+    | Least (n) -> (List.length res) >= n
+    | Exactly (n) -> (List.length res) = n
+    | Most (n) -> (List.length res) <= n
+    | More (n) -> (List.length res) < n
+  in
+  let msg = if b then "yes" else "no" in Response (msg, m)
+
 let perform (c : command) (m : model) =
   match c with
   | Create (ent, adj_list) -> create m ent adj_list
@@ -271,6 +297,7 @@ let perform (c : command) (m : model) =
   | Move (id, adj_list) -> move m id adj_list
   | Paint (id, new_color) -> paint m id new_color
   | Find (color, shape, adj_list) -> find m color shape adj_list
+  | Exist (quant, (c, s, al)) -> exists m quant c s al
   | Print -> print_model m ; Response ("", m)
   | Reset -> Response ("reset model", ([], []))
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)

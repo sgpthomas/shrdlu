@@ -46,7 +46,7 @@ let wrapper (p : tree combinatorparser) words =
   let remove_garbage words =
     let predicate x = (x <> "to") && (x <> "in") && (x <> "of") && (x <> "is") in List.filter predicate words
   in
-  let swap_list = [("is","are");("any","are")]
+  let swap_list = [("is","are");("any","are")] in
   let finished analysis = match analysis with
     | (_,[]) -> true
     | _ -> false

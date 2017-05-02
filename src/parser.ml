@@ -120,6 +120,7 @@ let parse (m : model) (instruction : string) =
       | "delete" -> delete_command m instruction
       | "paint" -> paint_command m instruction
       | "move" -> move_command m instruction
+      | "#exists" -> Exist (Exactly (3), (Red, Cube, []))
       | "#move" -> Move (3, [Adjacent (Right, 1)])
       | "#print" -> Print
       | "#reset" -> Reset
