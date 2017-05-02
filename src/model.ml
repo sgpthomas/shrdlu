@@ -1,7 +1,7 @@
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
 and shape = Cube | Sphere | Pyramid
-and color = Red | Blue | Purple | Green | Yellow | Orange | White | Colorless
+and color = Red | Blue | Purple | Green | Yellow | Orange | White | Unknown
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
@@ -64,7 +64,7 @@ let string_of_color = function
   | Yellow -> "yellow"
   | Orange -> "orange"
   | White -> "white"
-  | Colorless -> "colorless"
+  | Unknown -> "unknown"
 
 let color_of_string = function
   | "red" -> Red
@@ -74,7 +74,7 @@ let color_of_string = function
   | "yellow" -> Yellow
   | "orange" -> Orange
   | "white" -> White
-  | "colorless" -> Colorless
+  | "unknown" -> Unknown
   | _ -> raise No_such_color_exception
 
 let opposite_direction = function
@@ -174,7 +174,7 @@ let get_matches (m : model) ?(color_opt : color option) ?(shape_opt : shape opti
   List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
-  let matches = if c = Colorless then get_matches m ~shape_opt:s adj_list else get_matches m ~color_opt:c ~shape_opt:s adj_list in
+  let matches = if c = Unknown then get_matches m ~shape_opt:s adj_list else get_matches m ~color_opt:c ~shape_opt:s adj_list in
   match matches with
   | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x

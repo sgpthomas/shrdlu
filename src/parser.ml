@@ -9,23 +9,23 @@ let string_of_leaf = function
 let rec extract_info (m : model) (instruction : tree) (address : int list) =
     let entity = at instruction address in
     let color =
-      if ((at entity [0;1]) = (Leaf "0")) then
+      if ((at entity [1;0]) = (Leaf "0")) then
         if (at instruction [0;0] = Leaf "create") then
           (Leaf "white")
         else
-          (Leaf "colorless")
+          (Leaf "unknown")
       else
-        (at entity [0;1;0]) in
+        (at entity [1;0;0]) in
     let color = string_of_leaf color in
-    let shape = string_of_leaf (at entity [0;2;0]) in
-    let temp_direction = at entity [0;3] in
+    let shape = string_of_leaf (at entity [1;1;0]) in
+    let temp_direction = at entity [1;2] in
     let adjacent = if temp_direction = Leaf("0") then [] else
-    let adj_address = if (temp_direction = Leaf("that")) then 4 else 3 in
-    let direction = if ((at entity [0;adj_address;0;0]) = (Leaf "the") || (at entity [0;adj_address;0;0]) = (Leaf "0"))
-                    then (at entity [0;adj_address;0;1])
-                    else (at entity [0;adj_address;0;0]) in
+    let adj_address = if (temp_direction = Leaf("that")) then 3 else 2 in
+    let direction = if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
+                    then (at entity [1;adj_address;0;1])
+                    else (at entity [1;adj_address;0;0]) in
     let direction = string_of_leaf direction in
-    let (c, s, al) = extract_info m entity [0;adj_address;1] in
+    let (c, s, al) = extract_info m entity [1;adj_address;1] in
     let adjacent_entity = find_ID m (color_of_string c) (shape_of_string s) (List.map adjacent_of_string al) in
     [(direction,adjacent_entity)] in
     (color,shape,adjacent)
