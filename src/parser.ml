@@ -85,9 +85,11 @@ let get_tree (instruction : string) =
   resolve_ambiguity tree_list
   else raise Tree_not_found
 
+exception Unknown_shape
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let (c, s, al) = extract_info m tree [0;1] in
+    if s = Object then raise Unknown_shape else
     Create (Entity (!(genid ()), s, c), al)
 
 let delete_command (m : model) (instruction : string) =
@@ -147,6 +149,7 @@ let parse (m : model) (instruction : string) =
   | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
   | Tree_not_found -> Error ("Failed to parse input")
   | Not_a_leaf -> Error ("Called string_of_leaf incorrectly")
+  | Unknown_shape -> Error ("Objects must be created with a specific shape")
   | _ -> Error ("Something unexpected went wrong")
 
 
