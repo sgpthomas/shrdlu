@@ -1,3 +1,5 @@
+open Util
+
 (* Tree type definitions *)
 type tree = Leaf of string | Branch of string * tree list
 let unary label child = Branch (label,[child])
@@ -33,11 +35,11 @@ let (any_one_of : string list -> tree combinatorparser) l = function
 (* The custom grammar itself *)
 let rec command words = (query |. create |. delete |. paint |. move >. unary "Command") words
 and query words = (exists >. unary "Query") words
-and exists words = ((terminal "there") &. quantifier &. entity >. ternary "Exists") words
-and create words = ((terminal "create") &. entity >. binary "Create") words
+and create words = ((terminal "create") &. (entity |. terminal "random") >. binary "Create") words
 and delete words = ((terminal "delete") &. entity >. binary "Delete") words
 and paint words = ((terminal "paint") &. entity &. color >. ternary "Paint") words
 and move words = ((terminal "move") &. entity &. direction &. entity >. fourary "Move") words
+and exists words = ((terminal "there") &. quantifier &. entity >. ternary "Exists") words
 and entity words = ( opt(d) &. (thatLessentity |. thatFulentity) >. binary "Entity") words
 and thatLessentity words = (( opt(color) &. shape &. opt(adjacent)) >. ternary "thatLessEntity") words
 and thatFulentity words = (( opt(color) &. shape &. (terminal "that") &. adjacent) >. fourary "thatFulEntity") words
@@ -46,7 +48,7 @@ and quantifier words = ((any_one_of ["least";"exactly";"most";"more";"less"] &. 
 and number = (any_one_of ["0";"1";"2";"3";"4";"5";"6";"7";"8";"9";"10"]) >. unary "Number"
 and d = (any_one_of ["the";"a";"an"]) >. unary "D"
 and shape = (any_one_of ["cube";"sphere";"pyramid";"object"]) >. unary "Shape"
-and color = (any_one_of ["red";"orange";"yellow";"white";"green";"blue";"purple"]) >. unary "Color"
+and color = (any_one_of ["red";"orange";"yellow";"green";"blue";"purple"]) >. unary "Color"
 and direction = ((any_one_of ["above";"below";"behind";"front"]) >. unary "Direction")
     |. ((opt(terminal "the") &. (terminal "left" |. terminal "right")) >. binary "Direction")
 
@@ -74,7 +76,6 @@ let wrapper (p : tree combinatorparser) words =
                (p (remove_garbage (List.flatten (swap (String.split_on_char ' ' words))))  ))
 
 (* Address finder *)
-exception Tree_not_found
 let rec at myTree address =
   match address with
   | [] -> myTree

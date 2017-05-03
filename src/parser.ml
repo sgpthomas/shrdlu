@@ -1,12 +1,25 @@
+open Util
 open Model
 open Grammar
 open Batteries
 
 (* Returns the string of a leaf *)
-exception Not_a_leaf
 let string_of_leaf = function
   | Leaf(str) -> str
   | _ -> raise Not_a_leaf
+
+
+(* Generates a random color string *)
+let random_color () =
+  let color_list = ["red";"orange";"yellow";"green";"blue";"purple"] in
+  let random = Random.int (List.length color_list) in
+  List.nth color_list random
+
+(* Generates a random object string *)
+let random_object () =
+  let object_list = ["cube";"sphere";"pyramid"] in
+  let random = Random.int (List.length object_list) in
+  List.nth object_list random
 
 (* The most important function in parser. Given the address of an entity
  * a tree, it will extract its color, shape, and adjacent entities. Works
@@ -18,7 +31,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     if ((at entity [1;0]) = (Leaf "0")) then
       match (at instruction [0]) with
         (* If color not defined for create command, default to white *)
-        | Branch ("Create", _) -> (Leaf "white")
+        | Branch ("Create", _) -> (Leaf (random_color ()))
         (* If color not defined for other commands, then color unknown *)
         | _ -> (Leaf "unknown")
     (* Color has been explicitly defined *)
@@ -39,6 +52,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     let adjacent_entity = find_ID m c s al in
   [direction, adjacent_entity] in
   (color_of_string color, shape_of_string shape, (List.map adjacent_of_string adjacent))
+
 
 (* Brackets the sentence into its top level constituents for disambigatuion purposes *)
 let bracket_tree (tr : tree) =
@@ -61,6 +75,7 @@ let bracket_tree (tr : tree) =
       )
     )
 
+
 (* Presents the user with bracketed sentences and asks them to choose one *)
 let resolve_ambiguity (tl : tree list) =
   let sz = List.length tl in
@@ -79,25 +94,31 @@ let resolve_ambiguity (tl : tree list) =
     p ()
   end
 
+
+(* Given an instruction, returns a single parse tree or raises Tree_not_found *)
 let get_tree (instruction : string) = 
   let tree_list = (wrapper command instruction) in
-  if List.length tree_list <> 0 then
-  resolve_ambiguity tree_list
+  if List.length tree_list <> 0 then resolve_ambiguity tree_list
   else raise Tree_not_found
 
-exception Unknown_shape
+
+(* Returns a create command given a string and model *)
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let (c, s, al) = extract_info m tree [0;1] in
-    if s = Object then raise Unknown_shape else
+    let s = if s = Object then (shape_of_string (random_object ())) else s in 
     Create (Entity (!(genid ()), s, c), al)
 
+
+(* Returns a delete command given a string and model *)
 let delete_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     Delete (id)
 
+
+(* Returns a paint command given a string and model *)
 let paint_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let (c, s, al) = extract_info m tree [0;1] in
@@ -105,6 +126,8 @@ let paint_command (m : model) (instruction : string) =
     let new_color = string_of_leaf (at tree [0;2;0]) in
     Paint (id, color_of_string new_color)
 
+
+(* Returns a move command given a string and model *)
 let move_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let (c, s, al) = extract_info m tree [0;1] in
@@ -118,6 +141,8 @@ let move_command (m : model) (instruction : string) =
     ) in
     Move (id, [Adjacent (direction_of_string direction, id2)])
 
+
+(* Returns an exists command given a string and model *)
 let exists_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let quantifier = quantifier_of_string (string_of_leaf (at tree [0;0;1;0]))
@@ -149,7 +174,6 @@ let parse (m : model) (instruction : string) =
   | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
   | Tree_not_found -> Error ("Failed to parse input")
   | Not_a_leaf -> Error ("Called string_of_leaf incorrectly")
-  | Unknown_shape -> Error ("Objects must be created with a specific shape")
   | _ -> Error ("Something unexpected went wrong")
 
 

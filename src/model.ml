@@ -1,17 +1,9 @@
 open Util
 
-(* Exceptions *)
-exception No_such_quantifier_exception
-exception No_such_adjacent_exception
-exception No_such_direction_exception
-exception No_such_shape_exception
-exception No_such_color_exception
-exception No_such_entity_exception of string
-
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
 and shape = Cube | Sphere | Pyramid | Object
-and color = Red | Orange | Yellow | Green | Blue | Purple | White | Unknown
+and color = Red | Orange | Yellow | Green | Blue | Purple | Unknown
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
@@ -76,7 +68,6 @@ let string_of_color = function
   | Green -> "green"
   | Yellow -> "yellow"
   | Orange -> "orange"
-  | White -> "white"
   | Unknown -> "unknown"
 
 let color_of_string = function
@@ -86,7 +77,6 @@ let color_of_string = function
   | "green" -> Green
   | "yellow" -> Yellow
   | "orange" -> Orange
-  | "white" -> White
   | "unknown" -> Unknown
   | _ -> raise No_such_color_exception
 
@@ -153,7 +143,6 @@ let get_ansi_of_color = function
   | Green -> AnsiGreen
   | Yellow -> AnsiYellow
   | Orange -> AnsiOrange
-  | White -> AnsiWhite
   | Unknown -> AnsiBoldGrey
 
 let print_entity (m : model) (e : entity) =

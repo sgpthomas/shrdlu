@@ -1,3 +1,15 @@
+(* Exceptions *)
+exception No_such_quantifier_exception
+exception No_such_adjacent_exception
+exception No_such_direction_exception
+exception No_such_shape_exception
+exception No_such_color_exception
+exception Tree_not_found
+exception Not_a_leaf
+exception No_such_entity_exception of string
+
+
+
 type ansi_color =  AnsiBlack | AnsiRed | AnsiGreen | AnsiOrange | AnsiBlue | AnsiPurple
                   | AnsiCyan | AnsiBoldGrey | AnsiDarkGrey | AnsiBoldRed | AnsiBoldGreen | AnsiYellow
                   | AnsiBoldBlue | AnsiBoldPurple | AnsiBoldCyan | AnsiWhite
