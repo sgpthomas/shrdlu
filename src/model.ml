@@ -184,28 +184,28 @@ let entity_of_id (m : model) (id : int) =
   in
   let (entity_list, _) = m in f entity_list
 
-let get_matches (m : model) ?(color : color option) ?(shape : shape option) (adj_list : adjacent list) =
+let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
   let rec match_entity (el : entity list) (result : int list) =
     match el with
     | [] -> result
     | Entity (id, s, c)::tl ->
       match_entity tl (
-        match shape, color with
-        | Some a, Some b -> if a = s && b = c then (List.append result [id]) else result
-        | Some a, None -> if a = s then (List.append result [id]) else result
-        | None, Some b -> if b = c then (List.append result [id]) else result
-        | None, None -> result
+        match color, shape with
+        | Unknown, Object -> result
+        | Unknown, sh -> if sh = s then (List.append result [id]) else result
+        | col, Object -> if col = c then (List.append result [id]) else result
+        | col, sh -> if col = c && sh = s then (List.append result [id]) else result
       )
   in
 
   let rec match_adjacent (num : (int * (adjacent list)) list) (i : int) =
     let color = match color with
-      | Some x -> string_of_color x
-      | None -> ""
+      | Unknown -> ""
+      | x -> string_of_color x
     in
     let shape = match shape with
-      | Some x -> string_of_shape x
-      | None -> ""
+      | Object -> ""
+      | y -> string_of_shape y
     in
     match num with
     | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" color shape))
@@ -215,12 +215,11 @@ let get_matches (m : model) ?(color : color option) ?(shape : shape option) (adj
       else
         match_adjacent tl i
   in
-
   let (entity_list, adjacent_list) = m in
   List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
-  let matches = if c = Unknown then get_matches m ~shape:s adj_list else get_matches m ~color:c ~shape:s adj_list in
+  let matches = get_matches m c s adj_list in
   match matches with
   | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x
@@ -311,18 +310,14 @@ let paint (m : model) (id : int) (nc : color) =
   Response (msg, new_model)
 
 let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj_list : adjacent list) =
-  let res = match color, shape with
-    | Unknown, Object -> get_matches m adj_list
-    | Unknown, s -> get_matches m ~shape:s adj_list
-    | c, Object -> get_matches m ~color:c adj_list
-    | c, s -> get_matches m ~color:c ~shape:s adj_list
-  in
+  let res = get_matches m color shape adj_list in
+  let num_items = List.length res in 
   let b = match quant with
-    | Less (n) -> (List.length res) < n
-    | Least (n) -> (List.length res) >= n
-    | Exactly (n) -> (List.length res) = n
-    | Most (n) -> (List.length res) <= n
-    | More (n) -> (List.length res) > n
+    | Less (n) -> num_items < n
+    | Least (n) -> num_items >= n
+    | Exactly (n) -> num_items = n
+    | Most (n) -> num_items <= n
+    | More (n) -> num_items > n
   in
   let msg = if b then "yes" else "no" in Response (msg^"\n", m)
 
