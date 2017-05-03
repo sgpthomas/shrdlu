@@ -3,6 +3,7 @@ open Grammar
 open Batteries
 
 (* Returns the string of a leaf *)
+exception Not_a_leaf
 let string_of_leaf = function
   | Leaf(str) -> str
   | _ -> raise Not_a_leaf
@@ -15,10 +16,11 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
   let entity = at instruction address in
   let color = string_of_leaf (
     if ((at entity [1;0]) = (Leaf "0")) then
-      (* If color not defined for create command, default to white *)
-      if (at instruction [0;0] = Leaf "create") then (Leaf "white")
-      (* If color not defined for other commands, then color unknown *)
-      else (Leaf "unknown")
+      match (at instruction [0]) with
+        (* If color not defined for create command, default to white *)
+        | Branch ("Create", _) -> (Leaf "white")
+        (* If color not defined for other commands, then color unknown *)
+        | _ -> (Leaf "unknown")
     (* Color has been explicitly defined *)
     else (at entity [1;0;0])
   ) in
