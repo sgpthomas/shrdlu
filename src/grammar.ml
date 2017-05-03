@@ -23,14 +23,14 @@ let ( &. ) (p : 'a combinatorparser) (q : 'b combinatorparser) xs =
 let ( >. ) (p : 'a combinatorparser) f xs =
   [? List:(f x,ys) | (x,ys) <- List:(p xs) ?]
 
-(* Define empty and optional *)
+(* Define empty, optional, any_one_of *)
 let (empty : tree combinatorparser) words = [((Leaf "0"), words)]
 let opt p = p |. empty
 let (noanswers : ('a * remainder) list) = []
-
 let (any_one_of : string list -> tree combinatorparser) l = function
   x::xs when (List.mem x l) -> [((Leaf x),xs)]
   | _ -> noanswers
+
 
 (* The custom grammar itself *)
 let rec command words = (query |. create |. delete |. paint |. move >. unary "Command") words
@@ -50,9 +50,10 @@ and d = (any_one_of ["the";"a";"an"]) >. unary "D"
 and shape = (any_one_of ["cube";"sphere";"pyramid";"object"]) >. unary "Shape"
 and color = (any_one_of ["red";"orange";"yellow";"green";"blue";"purple"]) >. unary "Color"
 and direction = ((any_one_of ["above";"below";"behind";"front"]) >. unary "Direction")
-    |. ((opt(terminal "the") &. (terminal "left" |. terminal "right")) >. binary "Direction")
+    |. ((opt(terminal "the") &. (any_one_of ["left";"right"])) >. binary "Direction")
 
-(* Wrapper that parses the sentence *)
+
+(* Wrapper that parses the command *)
 let wrapper (p : tree combinatorparser) words =
   let remove_garbage words =
   let remove_list = ["to";"in";"of";"is";"are";"than";"at"] in
@@ -75,7 +76,8 @@ let wrapper (p : tree combinatorparser) words =
   List.map Pervasives.fst (List.filter finished
                (p (remove_garbage (List.flatten (swap (String.split_on_char ' ' words))))  ))
 
-(* Address finder *)
+
+(* Given a tree and an address, returns the subtree *)
 let rec at myTree address =
   match address with
   | [] -> myTree
@@ -84,32 +86,32 @@ let rec at myTree address =
   | Branch(value, tree_list) -> if head >= List.length tree_list then raise Tree_not_found else
     at (List.nth tree_list head) tail
 
-let dot_of_tree title t =
-  let rec dot_of_node i = function
-    Leaf name ->  (("n"^(string_of_int i)^" [label = \""^name^"\"];\n"),i)
-  | Branch (parent,kids) ->
-    let (rootbyindexlist,maximum) = List.fold_left (fun (sofar,index) kid ->
-      let (result,newindex) = dot_of_node (index+1) kid in
-      ((result,(index+1))::sofar,newindex)
-                    )
-      ([],i)
-      kids in
-    let thisnode = ("n"^(string_of_int i)^" [label = \""^parent^"\"];\n") in
-    let downarrows = List.fold_left (fun already (subtree,index) ->
-      ("n"^(string_of_int i)^"-> n"^(string_of_int index)^";\n"^already)
-            )
-      ""
-      rootbyindexlist in
-    let subtreedot = List.fold_left (fun already (subtree,index) ->
-                       subtree^already)
-      ""
-      rootbyindexlist in
-    (thisnode^downarrows^subtreedot,maximum)
 
- in
-  ("digraph \""^title^"\" {\n graph [bgcolor = \"transparent\"]; \n node [shape = plaintext fontcolor = white]; \n edge [arrowhead = none color = white]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}")
-
+(* Creates .png files from a tree *)
 let writetree i t =
+  let dot_of_tree title t =
+    let rec dot_of_node i = function
+    | Leaf name ->  (("n"^(string_of_int i)^" [label = \""^name^"\"];\n"),i)
+    | Branch (parent,kids) ->
+      let (rootbyindexlist,maximum) = List.fold_left (fun (sofar,index) kid ->
+        let (result,newindex) = dot_of_node (index+1) kid in
+        ((result,(index+1))::sofar,newindex))
+        ([],i)
+        kids in
+      let thisnode = ("n"^(string_of_int i)^" [label = \""^parent^"\"];\n") in
+      let downarrows = List.fold_left (fun already (subtree,index) ->
+        ("n"^(string_of_int i)^"-> n"^(string_of_int index)^";\n"^already)
+              )
+        ""
+        rootbyindexlist in
+      let subtreedot = List.fold_left (fun already (subtree,index) ->
+                         subtree^already)
+        ""
+        rootbyindexlist in
+      (thisnode^downarrows^subtreedot,maximum)
+   in
+    ("digraph \""^title^"\" {\n graph [bgcolor = \"transparent\"]; \n node [shape = plaintext fontcolor = white];
+     \n edge [arrowhead = none color = white]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}") in 
   let name = Printf.sprintf "tree%i" i in
   let oc = open_out name in
   output_string oc (dot_of_tree name t);
@@ -117,7 +119,3 @@ let writetree i t =
   let _ = Sys.command (Printf.sprintf "dot -Tpng %s -O" name) in
   let _ = Sys.command (Printf.sprintf "rm %s" name) in
   ()
-
-let produce_trees (sl : string list) =
-  let tl = List.flatten (List.map (wrapper command) sl) in
-  List.iteri writetree tl

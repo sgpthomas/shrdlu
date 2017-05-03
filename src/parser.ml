@@ -15,11 +15,12 @@ let random_color () =
   let random = Random.int (List.length color_list) in
   List.nth color_list random
 
-(* Generates a random object string *)
-let random_object () =
-  let object_list = ["cube";"sphere";"pyramid"] in
-  let random = Random.int (List.length object_list) in
-  List.nth object_list random
+(* Generates a random shape string *)
+let random_shape () =
+  let shape_list = ["cube";"sphere";"pyramid"] in
+  let random = Random.int (List.length shape_list) in
+  List.nth shape_list random
+
 
 (* The most important function in parser. Given the address of an entity
  * a tree, it will extract its color, shape, and adjacent entities. Works
@@ -106,7 +107,7 @@ let get_tree (instruction : string) =
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
     let (c, s, al) = extract_info m tree [0;1] in
-    let s = if s = Object then (shape_of_string (random_object ())) else s in 
+    let s = if s = Object then (shape_of_string (random_shape ())) else s in 
     Create (Entity (!(genid ()), s, c), al)
 
 
@@ -150,6 +151,8 @@ let exists_command (m : model) (instruction : string) =
     let (c, s, al) = extract_info m tree [0;0;2] in
     Exist (quantifier, (c, s,al))
 
+
+(* Identifies and executes the instruction based on the first word of the instruction *)
 let parse (m : model) (instruction : string) =
   if instruction = "" then Error ("type something") else
   let first_word = List.hd (String.split_on_char ' ' instruction) in
@@ -160,8 +163,7 @@ let parse (m : model) (instruction : string) =
     | "paint" -> paint_command m instruction
     | "move" -> move_command m instruction
     | "are"
-    | "is" 
-    | "there" -> exists_command m instruction
+    | "is" -> exists_command m instruction
     | "#print" -> Print
     | "#reset" -> Reset
     | "#parse" -> List.iteri (writetree) (wrapper command (snd (String.split instruction " "))) ; Error ("parsed tree")
@@ -171,9 +173,7 @@ let parse (m : model) (instruction : string) =
   | No_such_direction_exception -> Error ("No such direction")
   | No_such_shape_exception -> Error ("No such shape")
   | No_such_color_exception -> Error ("No such color")
-  | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
+  | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find a '%s' in the model" msg)
   | Tree_not_found -> Error ("Failed to parse input")
   | Not_a_leaf -> Error ("Called string_of_leaf incorrectly")
   | _ -> Error ("Something unexpected went wrong")
-
-

@@ -4,3 +4,4 @@ shrdlu
 .DS_Store
 _build
 .merlin
+*.png
