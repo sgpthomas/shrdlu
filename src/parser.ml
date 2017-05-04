@@ -32,18 +32,15 @@ let find_det tree address =
     | _ -> string_of_leaf num_or_det
 
 (* Ensures that proper determiners are being used *)
-let check_det command_type tree =
+let check_det command_type det =
   match  command_type with
-  | "adjacent" -> let det = find_det tree [0] in 
-                  if (det = "the" || det = "a") then true
+  | "adjacent" -> if (det = "the" || det = "a") then true
                   else false
-  | "create" -> let det = find_det tree [0;1;0] in
-                if (det = "the" || det = "all") then false
+  | "create" -> if (det = "the" || det = "all") then false
                 else true
   | "delete" -> true
   | "paint"  -> true
-  | "move"   -> let det = find_det tree [0;3;0] in
-                if (det = "a" || det = "the") then true
+  | "move"   -> if (det = "a" || det = "the") then true
                 else false
   | _ -> raise No_such_command_exception
 
@@ -70,7 +67,8 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     (* No adjacent entities *)
     if (maybe_direction = Leaf("0")) then [] 
     else let adj_address = if (maybe_direction = Leaf("that")) then 3 else 2 in
-    if not (check_det "adjacent" (at entity [1;adj_address;1])) then raise Incorrect_determiner else
+    let det = find_det entity [1;adj_address;1;0] in
+    if not (check_det "adjacent" det) then raise Incorrect_determiner else
     let direction = 
       string_of_leaf (
         if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
@@ -134,37 +132,41 @@ let get_tree (instruction : string) =
 (* Returns a create command given a string and model *)
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "create" tree) then raise Incorrect_determiner else
+  let det = find_det tree [0;1;0] in
+  let howmany = if det = "a" then 1 else int_of_string det in
+  if not (check_det "create" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let s = if s = Object then (shape_of_string (random_shape ())) else s in 
-    Create (Entity (!(genid ()), s, c), al)
+    Create (howmany, Entity (!(genid ()), s, c), al)
 
 
 (* Returns a delete command given a string and model *)
 let delete_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "delete" tree) then raise Incorrect_determiner else
+  let det = find_det tree [0;1;0] in
+  if not (check_det "delete" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
-    let det = find_det tree [0;1;0;0] in
     Delete (id, determiner_of_string det)
 
 
 (* Returns a paint command given a string and model *)
 let paint_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "paint" tree) then raise Incorrect_determiner else
+  let det = find_det tree [0;1;0] in
+  if not (check_det "paint" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     let new_color = string_of_leaf (at tree [0;2;0]) in
-    let det = find_det tree [0;1;0;0] in
     Paint (id, color_of_string new_color, determiner_of_string det)
 
 
 (* Returns a move command given a string and model *)
 let move_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "move" tree) then raise Incorrect_determiner else
+  let det1 = find_det tree [0;1;0] in (* Determiner of the first entity *)
+  let det2 = find_det tree [0;3;0] in (* Determiner of the second entity *)
+  if not (check_det "move" det2) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     let (c2, s2, al2) = extract_info m tree [0;3] in
@@ -174,8 +176,7 @@ let move_command (m : model) (instruction : string) =
       then (at tree [0;2;1])
       else (at tree [0;2;0]) 
     ) in
-    let det = find_det tree [0;3;0;0] in
-    Move (id, [Adjacent (direction_of_string direction, id2)], determiner_of_string det)
+    Move (id, [Adjacent (direction_of_string direction, id2)], determiner_of_string det1, determiner_of_string det2)
 
 
 (* Returns an exists command given a string and model *)
