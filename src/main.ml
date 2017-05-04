@@ -20,6 +20,7 @@ let rec main (m : model) =
   let input = prompt () in
   if not (List.mem input ["q";"quit";"exit"]) then
     let Response (msg, model) = perform (parse m input) m in
+    
     let () = Printf.printf "%s" msg in
     main model
   else

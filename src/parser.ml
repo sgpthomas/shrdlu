@@ -77,6 +77,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
       ) in
     let (c, s, al) = extract_info m entity [1;adj_address;1] in
     let adjacent_entity = find_ID m c s al in
+    let _ = return_ID_list m c s al (determiner_of_string det) in 
   [direction, adjacent_entity] in
   (color_of_string color, shape_of_string shape, (List.map adjacent_of_string adjacent))
 
@@ -146,8 +147,12 @@ let delete_command (m : model) (instruction : string) =
   let det = find_det tree [0;1;0] in
   if not (check_det "delete" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
-    let id = find_ID m c s al in
-    Delete (id, determiner_of_string det)
+    let id_list = return_ID_list m c s al (determiner_of_string det) in
+    let len = List.length id_list in
+    let message = Printf.sprintf 
+      "deleted %d %s %s" len (string_of_color c) (string_of_shape s) in
+    let message = if len > 1 then message^"s\n" else message^"\n" in
+    Delete (id_list, message)
 
 
 (* Returns a paint command given a string and model *)
@@ -156,9 +161,13 @@ let paint_command (m : model) (instruction : string) =
   let det = find_det tree [0;1;0] in
   if not (check_det "paint" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
-    let id = find_ID m c s al in
+    let id_list = return_ID_list m c s al (determiner_of_string det) in
     let new_color = string_of_leaf (at tree [0;2;0]) in
-    Paint (id, color_of_string new_color, determiner_of_string det)
+    let len = List.length id_list in
+    let message = Printf.sprintf
+      "painted %d %s %s %s" len (string_of_color c) (string_of_shape s) new_color in
+    let message = if len > 1 then message^"s\n" else message^"\n" in
+    Paint (id_list, color_of_string new_color, message)
 
 
 (* Returns a move command given a string and model *)
@@ -176,7 +185,7 @@ let move_command (m : model) (instruction : string) =
       then (at tree [0;2;1])
       else (at tree [0;2;0]) 
     ) in
-    Move (id, [Adjacent (direction_of_string direction, id2)], determiner_of_string det1, determiner_of_string det2)
+    Move ([id], [Adjacent (direction_of_string direction, id2)], determiner_of_string det1, determiner_of_string det2)
 
 
 (* Returns an exists command given a string and model *)

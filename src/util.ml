@@ -8,6 +8,7 @@ exception No_such_command_exception
 exception Tree_not_found
 exception Not_a_leaf
 exception Incorrect_determiner
+exception Not_enough_elements
 exception No_such_entity_exception of string
 
 
