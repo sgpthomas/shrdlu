@@ -8,6 +8,12 @@ and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
 
+type determiner =
+  | A
+  | The
+  | All
+  | Number of int
+
 (* Used for existence queries *)
 type quantifier =
   | Less of int
@@ -180,7 +186,7 @@ let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent
     | Entity (id, s, c)::tl ->
       match_entity tl (
         match color, shape with
-        | Unknown, Object -> result
+        | Unknown, Object -> List.append result [id]
         | Unknown, sh -> if sh = s then (List.append result [id]) else result
         | col, Object -> if col = c then (List.append result [id]) else result
         | col, sh -> if col = c && sh = s then (List.append result [id]) else result

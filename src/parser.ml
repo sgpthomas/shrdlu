@@ -22,6 +22,31 @@ let random_shape () =
   List.nth shape_list random
 
 
+(* Ensures that proper determiners are being used *)
+let check_det command_type tree =
+  let find_det tree address =
+    if (at tree address) = (Leaf "0") then "a" else (* Null determiner equivalent to "a" *)
+    let address = (List.append address [0]) in 
+    let maybe_det = at tree address in
+      match maybe_det with 
+      | Branch("Number",_) -> string_of_leaf (at maybe_det [0])
+      | _ -> string_of_leaf maybe_det
+  in
+  match  command_type with
+  | "adjacent" -> let det = find_det tree [0] in 
+                  if (det = "the" || det = "a") then true
+                  else false
+  | "create" -> let det = find_det tree [0;1;0] in
+                if (det = "the" || det = "all") then false
+                else true
+  | "delete" -> true
+  | "paint"  -> true
+  | "move"   -> let det = find_det tree [0;3;0] in
+                if (det = "a" || det = "the") then true
+                else false
+  | _ -> raise No_such_command_exception
+
+
 (* The most important function in parser. Given the address of an entity
  * a tree, it will extract its color, shape, and adjacent entities. Works
  * recursively by also extracting the info of the adjacent entities.
@@ -44,11 +69,13 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     (* No adjacent entities *)
     if (maybe_direction = Leaf("0")) then [] 
     else let adj_address = if (maybe_direction = Leaf("that")) then 3 else 2 in
-    let direction = string_of_leaf (
-      if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
-      then (at entity [1;adj_address;0;1])
-      else (at entity [1;adj_address;0;0]) 
-    ) in
+    if not (check_det "adjacent" (at entity [1;adj_address;1])) then raise Incorrect_determiner else
+    let direction = 
+      string_of_leaf (
+        if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
+        then (at entity [1;adj_address;0;1])
+        else (at entity [1;adj_address;0;0]) 
+      ) in
     let (c, s, al) = extract_info m entity [1;adj_address;1] in
     let adjacent_entity = find_ID m c s al in
   [direction, adjacent_entity] in
@@ -106,6 +133,7 @@ let get_tree (instruction : string) =
 (* Returns a create command given a string and model *)
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
+  if not (check_det "create" tree) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let s = if s = Object then (shape_of_string (random_shape ())) else s in 
     Create (Entity (!(genid ()), s, c), al)
@@ -114,6 +142,7 @@ let create_command (m : model) (instruction : string) =
 (* Returns a delete command given a string and model *)
 let delete_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
+  if not (check_det "delete" tree) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     Delete (id)
@@ -122,6 +151,7 @@ let delete_command (m : model) (instruction : string) =
 (* Returns a paint command given a string and model *)
 let paint_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
+  if not (check_det "paint" tree) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     let new_color = string_of_leaf (at tree [0;2;0]) in
@@ -131,6 +161,7 @@ let paint_command (m : model) (instruction : string) =
 (* Returns a move command given a string and model *)
 let move_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
+  if not (check_det "move" tree) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     let (c2, s2, al2) = extract_info m tree [0;3] in
@@ -173,7 +204,9 @@ let parse (m : model) (instruction : string) =
   | No_such_direction_exception -> Error ("No such direction")
   | No_such_shape_exception -> Error ("No such shape")
   | No_such_color_exception -> Error ("No such color")
-  | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find a '%s' in the model" msg)
+  | No_such_command_exception -> Error ("No such command")
+  | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
   | Tree_not_found -> Error ("Failed to parse input")
   | Not_a_leaf -> Error ("Called string_of_leaf incorrectly")
+  | Incorrect_determiner -> Error ("Used an incorrect determiner")
   | _ -> Error ("Something unexpected went wrong")

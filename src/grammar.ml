@@ -45,8 +45,8 @@ and thatLessentity words = (( opt(color) &. shape &. opt(adjacent)) >. ternary "
 and thatFulentity words = (( opt(color) &. shape &. (terminal "that") &. adjacent) >. fourary "thatFulEntity") words
 and adjacent words = (direction &. entity >. binary "Adjacent") words
 and quantifier words = ((any_one_of ["least";"exactly";"most";"more";"less"] &. number ) >. binary "Quantifier") words
+and d words = ((any_one_of ["the";"a";"all"]) |. number >. unary "D") words
 and number = (any_one_of ["0";"1";"2";"3";"4";"5";"6";"7";"8";"9";"10"]) >. unary "Number"
-and d = (any_one_of ["the";"a";"an"]) >. unary "D"
 and shape = (any_one_of ["cube";"sphere";"pyramid";"object"]) >. unary "Shape"
 and color = (any_one_of ["red";"orange";"yellow";"green";"blue";"purple"]) >. unary "Color"
 and direction = ((any_one_of ["above";"below";"behind";"front"]) >. unary "Direction")
@@ -60,8 +60,8 @@ let wrapper (p : tree combinatorparser) words =
   let predicate x = not (List.mem x remove_list) in List.filter predicate words
   in
   let swap_list = [("any","least 1");("cubes","cube");("spheres","sphere");("pyramids","pyramid");
-        ("objects","object");("one","1");("two","2");("three","3");("four","4");("five","5");
-        ("six","6");("seven","7");("eight","8");("nine","9");("ten","10")] in
+    ("objects","object");("an","a");("one","1");("two","2");("three","3");("four","4");("five","5");
+    ("six","6");("seven","7");("eight","8");("nine","9");("ten","10")] in
   let swap words =
   let helper word =
    if (List.mem_assoc word swap_list) then
