@@ -22,16 +22,17 @@ let random_shape () =
   List.nth shape_list random
 
 
+(* Finds the determiner at a given address. "a" if none *)
+let find_det tree address =
+  if (at tree address) = (Leaf "0") then "a" else (* Set null determiner equivalent to "a" *)
+  let address = (List.append address [0]) in 
+  let num_or_det = at tree address in
+    match num_or_det with 
+    | Branch("Number",_) -> string_of_leaf (at num_or_det [0])
+    | _ -> string_of_leaf num_or_det
+
 (* Ensures that proper determiners are being used *)
 let check_det command_type tree =
-  let find_det tree address =
-    if (at tree address) = (Leaf "0") then "a" else (* Null determiner equivalent to "a" *)
-    let address = (List.append address [0]) in 
-    let maybe_det = at tree address in
-      match maybe_det with 
-      | Branch("Number",_) -> string_of_leaf (at maybe_det [0])
-      | _ -> string_of_leaf maybe_det
-  in
   match  command_type with
   | "adjacent" -> let det = find_det tree [0] in 
                   if (det = "the" || det = "a") then true
@@ -145,7 +146,8 @@ let delete_command (m : model) (instruction : string) =
   if not (check_det "delete" tree) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
-    Delete (id)
+    let det = find_det tree [0;1;0;0] in
+    Delete (id, determiner_of_string det)
 
 
 (* Returns a paint command given a string and model *)
@@ -155,7 +157,8 @@ let paint_command (m : model) (instruction : string) =
     let (c, s, al) = extract_info m tree [0;1] in
     let id = find_ID m c s al in
     let new_color = string_of_leaf (at tree [0;2;0]) in
-    Paint (id, color_of_string new_color)
+    let det = find_det tree [0;1;0;0] in
+    Paint (id, color_of_string new_color, determiner_of_string det)
 
 
 (* Returns a move command given a string and model *)
@@ -171,7 +174,8 @@ let move_command (m : model) (instruction : string) =
       then (at tree [0;2;1])
       else (at tree [0;2;0]) 
     ) in
-    Move (id, [Adjacent (direction_of_string direction, id2)])
+    let det = find_det tree [0;3;0;0] in
+    Move (id, [Adjacent (direction_of_string direction, id2)], determiner_of_string det)
 
 
 (* Returns an exists command given a string and model *)

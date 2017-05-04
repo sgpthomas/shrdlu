@@ -25,10 +25,10 @@ type quantifier =
 
 type command =
   | Create of entity * adjacent list
-  | Delete of int
-  | Move of int * adjacent list
-  | Paint of int * color
-  | Find of color * shape * adjacent list
+  | Delete of int * determiner
+  | Move of int * adjacent list * determiner
+  | Paint of int * color * determiner
+  | Find of color * shape * adjacent list * determiner
   | Exist of quantifier * (color * shape * adjacent list)
   | Print
   | Reset
@@ -106,6 +106,20 @@ let quantifier_of_string (s : string) (n : int) =
   | "exactly" -> Exactly (n)
   | "most" -> Most (n)
   | "more" -> More (n)
+  | _ -> raise No_such_quantifier_exception
+
+let string_of_determiner = function
+  | A -> "a"
+  | The -> "the"
+  | All -> "all"
+  | Number (x) -> string_of_int (x)
+
+let determiner_of_string (s : string) =
+  match s with
+  | "a" -> A
+  | "the" -> The
+  | "all" -> All
+  | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" -> Number (int_of_string s)
   | _ -> raise No_such_quantifier_exception
 
 let opposite_direction = function
@@ -213,14 +227,30 @@ let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent
   let (entity_list, adjacent_list) = m in
   List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
 
+
+(*  *)
+let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : determiner) =
+  let matches = get_matches m c s adj_list in
+  match matches with
+  | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
+  | x ->
+    let len = List.length matches in
+    match det with
+    | A -> [List.hd matches]
+    | The -> let () = print_string "3 Found. Choosing first one" in [List.hd matches]
+    | All -> matches
+    | Number (n) -> [List.hd matches]
+
+
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   let matches = get_matches m c s adj_list in
   match matches with
   | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x
 
-let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
-  Response (string_of_int (find_ID m c s adj_list), m)
+
+let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : determiner) =
+  Response ((* List.hd (List.map  *)string_of_int (find_ID m c s adj_list )(* ) *), m)
 
 let create (m : model) (e : entity) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
@@ -319,10 +349,10 @@ let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj
 let perform (c : command) (m : model) =
   match c with
   | Create (ent, adj_list) -> create m ent adj_list
-  | Delete (id) -> delete m id
-  | Move (id, adj_list) -> move m id adj_list
-  | Paint (id, new_color) -> paint m id new_color
-  | Find (color, shape, adj_list) -> find m color shape adj_list
+  | Delete (id, det) -> delete m id
+  | Move (id, adj_list, det) -> move m id adj_list
+  | Paint (id, new_color, det) -> paint m id new_color
+  | Find (color, shape, adj_list, det) -> find m color shape adj_list det
   | Exist (quant, (c, s, al)) -> exists m quant c s al
   | Print -> print_model m ; Response ("", m)
   | Reset -> Response ("reset model\n", ([], []))
