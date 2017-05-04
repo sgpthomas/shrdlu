@@ -17,7 +17,7 @@ let random_color () =
 
 (* Generates a random shape string *)
 let random_shape () =
-  let shape_list = ["cube";"sphere";"pyramid"] in
+  let shape_list = ["cube";"sphere";"pyramid";"cylinder"] in
   let random = Random.int (List.length shape_list) in
   List.nth shape_list random
 
@@ -136,9 +136,13 @@ let create_command (m : model) (instruction : string) =
   let det = find_det tree [0;1;0] in
   let howmany = if det = "a" then 1 else int_of_string det in
   if not (check_det "create" det) then raise Incorrect_determiner else
-    let (c, s, al) = extract_info m tree [0;1] in
-    let s = if s = Object then (shape_of_string (random_shape ())) else s in 
-    Create (howmany, Entity (!(genid ()), s, c), al)
+  let (c, s, al) = extract_info m tree [0;1] in
+  let s = if s = Object then (shape_of_string (random_shape ())) else s in 
+  let message = Printf.sprintf 
+    "created %d %s %s" howmany (string_of_color c) (string_of_shape s) in
+  let message = if howmany > 1 then message^"s\n" else message^"\n" in
+  let ent = Entity (!(genid ()), s, c) in 
+  Create (howmany, ent, al, message)
 
 
 (* Returns a delete command given a string and model *)
@@ -177,7 +181,7 @@ let move_command (m : model) (instruction : string) =
   let det2 = find_det tree [0;3;0] in (* Determiner of the second entity *)
   if not (check_det "move" det2) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
-    let id = find_ID m c s al in
+    let id_list = return_ID_list m c s al (determiner_of_string det1) in
     let (c2, s2, al2) = extract_info m tree [0;3] in
     let id2 = find_ID m c2 s2 al2 in
     let direction = string_of_leaf (
@@ -185,7 +189,12 @@ let move_command (m : model) (instruction : string) =
       then (at tree [0;2;1])
       else (at tree [0;2;0]) 
     ) in
-    Move ([id], [Adjacent (direction_of_string direction, id2)], determiner_of_string det1, determiner_of_string det2)
+    let len = List.length id_list in
+    let message = Printf.sprintf "moved %d %s %s" len (string_of_color c) 
+      (string_of_shape s) in
+    let message = if len > 1 then message^"s" else message in
+    let message = message^(Printf.sprintf " %s the %s %s\n" (verbose_direction direction) (string_of_color c2) (string_of_shape s2)) in
+    Move (id_list, [Adjacent (direction_of_string direction, id2)], message)
 
 
 (* Returns an exists command given a string and model *)
