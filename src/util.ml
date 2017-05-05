@@ -12,7 +12,6 @@ exception Not_enough_elements
 exception No_such_entity_exception of string
 exception Cant_self_reference
 
-
 (* Generates a random color string *)
 let random_color () =
   let color_list = ["red";"orange";"yellow";"green";"blue";"purple"] in

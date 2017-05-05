@@ -207,9 +207,9 @@ let entity_of_id (m : model) (id : int) =
   let (entity_list, _) = m in f entity_list
 
 let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
-  (* let rec print_list = function 
+  (* let rec print_list = function
     [] -> ()
-    | e::l -> print_string(string_of_adjacent e) ; print_string " " ; print_list l in 
+    | e::l -> print_string(string_of_adjacent e) ; print_string " " ; print_list l in
   let () = print_list adj_list in *)
   let rec match_entity (el : entity list) (result : int list) =
     match el with
@@ -225,22 +225,16 @@ let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent
   in
 
   let rec match_adjacent (num : (int * (adjacent list)) list) (i : int) =
-    let color = string_of_color color
-    in
-    let shape = match shape with
-      | Object -> ""
-      | y -> string_of_shape y
-    in
     match num with
-    | [] -> raise (No_such_entity_exception (Printf.sprintf "debug4%s %s" color shape))
+    | [] -> []
     | (n, al)::tl ->
       if n = i && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
-        n
+        [n]
       else
         match_adjacent tl i
   in
   let (entity_list, adjacent_list) = m in
-  List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
+  List.flatten (List.map (match_adjacent (adjacent_list)) (match_entity entity_list []))
 
 
 (* Helper function for retreiving the first n elements of a list *)
@@ -254,7 +248,7 @@ let rec first_n_elements n mylist =
 (*  *)
 let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : determiner) =
   let matches = get_matches m c s adj_list in
-  let c = string_of_color c in 
+  let c = string_of_color c in
   let s = string_of_shape s in
   let ent = if c = "" then s else Printf.sprintf "%s %s" c s in
   match matches with
@@ -265,14 +259,23 @@ let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list
     try
       match det with
       | A -> [List.hd matches]
-      | The -> let () = if len > 1 then (Printf.printf "%d such %ss found. Choosing the first one\n" len ent) else () in 
-      [List.hd matches]
+      | The -> let () = if len > 1 then (Printf.printf "%d such %ss found. Choosing the first one\n" len ent) else () in
+        [List.hd matches]
       | All -> matches
-      | Number (n) -> 
+      | Number (n) ->
         if n > len then raise Not_enough_elements
         else first_n_elements n matches
     with
     | Not_enough_elements -> []
+
+(* let model_of_ID_list (m : model) (id_list : int list) = *)
+(*   let rec get_entities (el : entity list) = *)
+(*     match el with *)
+(*     | [] -> [] *)
+(*     | hd :: tl -> if (List.exist (fun x -> )) *)
+
+(*   let (entity_list, numbered_adj_list) = m in *)
+
 
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
