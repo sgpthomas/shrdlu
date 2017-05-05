@@ -32,6 +32,13 @@ let (any_one_of : string list -> tree combinatorparser) l = function
   | _ -> noanswers
 
 
+
+let number_strings =
+  let rec f l i =
+    if i >= 100 then l else List.append [string_of_int i] (f l (i+1))
+  in
+  f [] 1
+
 (* The custom grammar itself *)
 let rec command words = (query |. create |. delete |. paint |. move >. unary "Command") words
 and query words = (exists >. unary "Query") words
@@ -46,7 +53,7 @@ and thatFulentity words = (( opt(color) &. shape &. (terminal "that") &. adjacen
 and adjacent words = (direction &. entity >. binary "Adjacent") words
 and quantifier words = ((any_one_of ["least";"exactly";"most";"more";"less"] &. number ) >. binary "Quantifier") words
 and d words = ((any_one_of ["the";"a";"all"]) |. number >. unary "D") words
-and number = (any_one_of ["1";"2";"3";"4";"5";"6";"7";"8";"9";"10"]) >. unary "Number"
+and number = (any_one_of number_strings) >. unary "Number"
 and shape = (any_one_of ["cube";"sphere";"pyramid";"cylinder";"object"]) >. unary "Shape"
 and color = (any_one_of ["red";"orange";"yellow";"green";"blue";"purple";"random"]) >. unary "Color"
 and direction = ((any_one_of ["above";"below";"behind";"front"]) >. unary "Direction")
@@ -110,8 +117,8 @@ let writetree i t =
         rootbyindexlist in
       (thisnode^downarrows^subtreedot,maximum)
    in
-    ("digraph \""^title^"\" {\n graph [bgcolor = \"transparent\"]; \n node [shape = plaintext fontcolor = white];
-     \n edge [arrowhead = none color = white]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}") in 
+    ("digraph \""^title^"\" {\n graph [bgcolor = \"transparent\"]; \n node [shape = plaintext fontcolor = black];
+     \n edge [arrowhead = none color = black]; \n"^(Pervasives.fst (dot_of_node 0 t))^"}") in 
   let name = Printf.sprintf "tree%i" i in
   let oc = open_out name in
   output_string oc (dot_of_tree name t);
