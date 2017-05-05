@@ -132,8 +132,7 @@ let determiner_of_string (s : string) =
   | "a" -> A
   | "the" -> The
   | "all" -> All
-  | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" -> Number (int_of_string s)
-  | _ -> raise No_such_quantifier_exception
+  | x -> Number (int_of_string x)
 
 let opposite_direction = function
   | Left -> Right
