@@ -2,8 +2,8 @@ open Util
 
 (* Types *)
 type direction = Left | Right | Behind | Front | Above | Below
-and shape = Cube | Sphere | Pyramid | Object
-and color = Red | Orange | Yellow | Green | Blue | Purple | Unknown
+and shape = Cube | Sphere | Pyramid | Cylinder | Object
+and color = Red | Orange | Yellow | Green | Blue | Purple | Unknown | Random
 and adjacent = Adjacent of (direction * int)
 and entity = Entity of int * shape * color
 and model = (entity list) * (int * (adjacent list)) list
@@ -24,10 +24,10 @@ type quantifier =
 
 
 type command =
-  | Create of entity * adjacent list
-  | Delete of int * determiner
-  | Move of int * adjacent list * determiner
-  | Paint of int * color * determiner
+  | Create of int * color * shape * adjacent list * string
+  | Delete of int list * string
+  | Move of int list * adjacent list * string
+  | Paint of int list * color * string
   | Find of color * shape * adjacent list * determiner
   | Exist of quantifier * (color * shape * adjacent list)
   | Print
@@ -45,6 +45,15 @@ let string_of_direction = function
   | Above -> "above"
   | Below -> "below"
 
+let verbose_direction = function
+  | "left" -> "to the left of"
+  | "right" -> "to the right of"
+  | "behind" -> "behind"
+  | "front" -> "in front of"
+  | "above" -> "above"
+  | "below" -> "below"
+  | _ -> raise No_such_direction_exception
+
 let direction_of_string = function
   | "left" -> Left
   | "right" -> Right
@@ -58,12 +67,14 @@ let string_of_shape = function
   | Cube -> "cube"
   | Sphere -> "sphere"
   | Pyramid -> "pyramid"
+  | Cylinder -> "cylinder"
   | Object -> "object"
 
 let shape_of_string = function
   | "cube" -> Cube
   | "sphere" -> Sphere
   | "pyramid" -> Pyramid
+  | "cylinder" -> Cylinder
   | "object" -> Object
   | _ -> raise No_such_shape_exception
 
@@ -74,7 +85,8 @@ let string_of_color = function
   | Green -> "green"
   | Yellow -> "yellow"
   | Orange -> "orange"
-  | Unknown -> "unknown"
+  | Unknown -> ""
+  | Random -> "random"
 
 let color_of_string = function
   | "red" -> Red
@@ -84,6 +96,7 @@ let color_of_string = function
   | "yellow" -> Yellow
   | "orange" -> Orange
   | "unknown" -> Unknown
+  | "random" -> Random
   | _ -> raise No_such_color_exception
 
 let adjacent_of_string = function
@@ -164,6 +177,7 @@ let get_ansi_of_color = function
   | Yellow -> AnsiYellow
   | Orange -> AnsiOrange
   | Unknown -> AnsiBoldGrey
+  | Random -> AnsiWhite
 
 let print_entity (m : model) (e : entity) =
   let Entity (id, shape, color) = e in
@@ -188,12 +202,16 @@ let flip_adjacent (a : adjacent) =
 let entity_of_id (m : model) (id : int) =
   let rec f (el : entity list) =
     match el with
-    | [] -> raise (No_such_entity_exception (Printf.sprintf "id: %d" id))
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "debug3id: %d" id))
     | Entity (i, s, c)::tl -> if i = id then Entity (i, s, c) else f tl
   in
   let (entity_list, _) = m in f entity_list
 
 let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
+  (* let rec print_list = function 
+    [] -> ()
+    | e::l -> print_string(string_of_adjacent e) ; print_string " " ; print_list l in 
+  let () = print_list adj_list in *)
   let rec match_entity (el : entity list) (result : int list) =
     match el with
     | [] -> result
@@ -208,16 +226,14 @@ let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent
   in
 
   let rec match_adjacent (num : (int * (adjacent list)) list) (i : int) =
-    let color = match color with
-      | Unknown -> ""
-      | x -> string_of_color x
+    let color = string_of_color color
     in
     let shape = match shape with
       | Object -> ""
       | y -> string_of_shape y
     in
     match num with
-    | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" color shape))
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "debug4%s %s" color shape))
     | (n, al)::tl ->
       if n = i && List.for_all (fun x -> List.mem x al) (List.map flip_adjacent adj_list) then
         n
@@ -228,31 +244,51 @@ let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent
   List.map (match_adjacent (adjacent_list)) (match_entity entity_list [])
 
 
+(* Helper function for retreiving the first n elements of a list *)
+let rec first_n_elements n mylist =
+  if n > List.length mylist then raise Not_enough_elements else
+  match n with
+  | 0 -> []
+  | _ -> List.hd mylist :: first_n_elements (n-1) (List.tl mylist)
+
+
 (*  *)
 let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : determiner) =
   let matches = get_matches m c s adj_list in
+  let c = string_of_color c in 
+  let s = string_of_shape s in
+  let ent = if c = "" then s else Printf.sprintf "%s %s" c s in
   match matches with
-  | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
+  | [] -> raise (No_such_entity_exception (Printf.sprintf "debug1%s" ent))
   | x ->
     let len = List.length matches in
-    match det with
-    | A -> [List.hd matches]
-    | The -> let () = print_string "3 Found. Choosing first one" in [List.hd matches]
-    | All -> matches
-    | Number (n) -> [List.hd matches]
+    let () = (Printf.printf "Debug returnID: %d such %ss \n" len ent) in
+    try
+      match det with
+      | A -> [List.hd matches]
+      | The -> let () = if len > 1 then (Printf.printf "%d such %ss found. Choosing the first one\n" len ent) else () in 
+      [List.hd matches]
+      | All -> matches
+      | Number (n) -> 
+        if n > len then raise Not_enough_elements
+        else first_n_elements n matches
+    with
+    | Not_enough_elements -> []
 
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   let matches = get_matches m c s adj_list in
+
   match matches with
-  | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
+  | [] -> raise (No_such_entity_exception (Printf.sprintf "debug2%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x
 
 
 let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : determiner) =
-  Response ((* List.hd (List.map  *)string_of_int (find_ID m c s adj_list )(* ) *), m)
+  Response (string_of_int (find_ID m c s adj_list ), m)
 
-let create (m : model) (e : entity) (adj_list : adjacent list) =
+
+let create_one (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
   let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
 
@@ -280,16 +316,23 @@ let create (m : model) (e : entity) (adj_list : adjacent list) =
     else
       new_numbered
   in
-
-  let Entity (id, shape, color) = e in
+  let s = if s = Object then (shape_of_string (random_shape ())) else s in
+  let c = if c = Random then (color_of_string (random_color ())) else c in
+  let id = !(genid ()) in
+  let ent = Entity (id, s, c) in 
   let (el, al) = m in (* get entities and adjacents *)
-  let new_el = List.append el [e] in
+  let new_el = List.append el [ent] in
   let new_al = update_adjacents al id adj_list in
   let new_model = (new_el, new_al) in
-  let msg = Printf.sprintf "created %d: %s %s\n" id (string_of_color color) (string_of_shape shape) in
-  Response (msg, new_model)
+  new_model
 
-let delete (m : model) (id : int) =
+let rec create (m : model) (howmany : int) (c : color) (s : shape) (adj_list : adjacent list) (message : string) =
+  match howmany with
+    | 0 -> Response (message, m)
+    | _ -> let new_model = (create_one m c s adj_list) in create new_model (howmany-1) c s adj_list message  
+
+
+let delete_one (m : model) (id : int) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
   let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) =
 
@@ -305,7 +348,6 @@ let delete (m : model) (id : int) =
 
     List.map (remove_links) (List.filter remove_row numbered)
   in
-
   let remove_entity (el : entity list) =
     let re (e : entity) = let Entity (i, _, _) = e in if id = i then [] else [e] in
     List.flatten (List.map re el)
@@ -315,15 +357,15 @@ let delete (m : model) (id : int) =
   let new_el = remove_entity el in
   let new_al = update_adjacents al id in
   let new_model = (new_el, new_al) in
-  let msg = Printf.sprintf "deleted %d\n" id in
-  Response (msg, new_model)
+  new_model
 
-let move (m : model) (id : int) (adj_list : adjacent list) =
-  let Response (_, nm) = delete m id in
-  let Response (_, new_model) = create nm (entity_of_id m id) adj_list in
-  Response (Printf.sprintf "moved %d\n" id, new_model)
+let rec delete (m : model) (id_list : int list) (message : string) = 
+  match id_list with
+  | [] -> Response (message, m)
+  | head :: tail -> let new_model = (delete_one m head) in delete new_model tail message
 
-let paint (m : model) (id : int) (nc : color) =
+
+let paint_one (m : model) (id : int) (nc : color) (message : string) =
   let paint_entity (el : entity list) =
     let re (e : entity) = let Entity (i, s, c) = e in if id = i then [Entity (i, s, nc)] else [e] in
     List.flatten (List.map re el)
@@ -331,8 +373,26 @@ let paint (m : model) (id : int) (nc : color) =
 
   let (el, al) = m in
   let new_model = (paint_entity el, al) in
-  let msg = Printf.sprintf "painted %d %s\n" id (string_of_color nc) in
-  Response (msg, new_model)
+  new_model
+
+let rec paint (m : model) (id_list : int list) (nc : color) (message : string) =
+  match id_list with
+    | [] -> Response (message, m)
+    | head :: tail -> let new_model = (paint_one m head nc message) in paint new_model tail nc message
+
+
+
+let move_one (m : model) (id : int) (adj_list : adjacent list) =
+  let nm = delete_one m id in
+  let Entity (_, shape, color) = (entity_of_id m id) in
+  let Response (_, new_model) = create nm 1 color shape adj_list "" in
+  new_model
+
+let rec move (m : model) (id_list : int list) (adj_list : adjacent list) (message : string) =
+  match id_list with
+    | [] -> Response (message, m)
+    | head :: tail -> let new_model = (move_one m head adj_list) in move new_model tail adj_list message
+
 
 let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj_list : adjacent list) =
   let res = get_matches m color shape adj_list in
@@ -348,10 +408,10 @@ let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj
 
 let perform (c : command) (m : model) =
   match c with
-  | Create (ent, adj_list) -> create m ent adj_list
-  | Delete (id, det) -> delete m id
-  | Move (id, adj_list, det) -> move m id adj_list
-  | Paint (id, new_color, det) -> paint m id new_color
+  | Create (howmany, c, s, adj_list, message) -> create m howmany c s adj_list message
+  | Delete (id_list, message) -> delete m id_list message
+  | Move (id_list, adj_list, message) -> move m id_list adj_list message
+  | Paint (id_list, new_color, message) -> paint m id_list new_color message
   | Find (color, shape, adj_list, det) -> find m color shape adj_list det
   | Exist (quant, (c, s, al)) -> exists m quant c s al
   | Print -> print_model m ; Response ("", m)

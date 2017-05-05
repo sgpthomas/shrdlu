@@ -8,8 +8,21 @@ exception No_such_command_exception
 exception Tree_not_found
 exception Not_a_leaf
 exception Incorrect_determiner
+exception Not_enough_elements
 exception No_such_entity_exception of string
 
+
+(* Generates a random color string *)
+let random_color () =
+  let color_list = ["red";"orange";"yellow";"green";"blue";"purple"] in
+  let random = Random.int (List.length color_list) in
+  List.nth color_list random
+
+(* Generates a random shape string *)
+let random_shape () =
+  let shape_list = ["cube";"sphere";"pyramid";"cylinder"] in
+  let random = Random.int (List.length shape_list) in
+  List.nth shape_list random
 
 
 type ansi_color =  AnsiBlack | AnsiRed | AnsiGreen | AnsiOrange | AnsiBlue | AnsiPurple
@@ -36,3 +49,5 @@ let print_color (s : string) (c : ansi_color) =
     | AnsiWhite -> "\x1b[1;37m"
   in
   Printf.printf "%s%s%s" code s "\x1b[0m"
+
+

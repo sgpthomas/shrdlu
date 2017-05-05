@@ -9,19 +9,6 @@ let string_of_leaf = function
   | _ -> raise Not_a_leaf
 
 
-(* Generates a random color string *)
-let random_color () =
-  let color_list = ["red";"orange";"yellow";"green";"blue";"purple"] in
-  let random = Random.int (List.length color_list) in
-  List.nth color_list random
-
-(* Generates a random shape string *)
-let random_shape () =
-  let shape_list = ["cube";"sphere";"pyramid"] in
-  let random = Random.int (List.length shape_list) in
-  List.nth shape_list random
-
-
 (* Finds the determiner at a given address. "a" if none *)
 let find_det tree address =
   if (at tree address) = (Leaf "0") then "a" else (* Set null determiner equivalent to "a" *)
@@ -32,18 +19,15 @@ let find_det tree address =
     | _ -> string_of_leaf num_or_det
 
 (* Ensures that proper determiners are being used *)
-let check_det command_type tree =
+let check_det command_type det =
   match  command_type with
-  | "adjacent" -> let det = find_det tree [0] in 
-                  if (det = "the" || det = "a") then true
+  | "adjacent" -> if (det = "the" || det = "a") then true
                   else false
-  | "create" -> let det = find_det tree [0;1;0] in
-                if (det = "the" || det = "all") then false
+  | "create" -> if (det = "the" || det = "all") then false
                 else true
   | "delete" -> true
   | "paint"  -> true
-  | "move"   -> let det = find_det tree [0;3;0] in
-                if (det = "a" || det = "the") then true
+  | "move"   -> if (det = "a" || det = "the") then true
                 else false
   | _ -> raise No_such_command_exception
 
@@ -58,7 +42,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     if ((at entity [1;0]) = (Leaf "0")) then
       match (at instruction [0]) with
         (* If color not defined for create command, default to white *)
-        | Branch ("Create", _) -> (Leaf (random_color ()))
+        | Branch ("Create", _) -> (Leaf ("random"))
         (* If color not defined for other commands, then color unknown *)
         | _ -> (Leaf "unknown")
     (* Color has been explicitly defined *)
@@ -70,7 +54,8 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     (* No adjacent entities *)
     if (maybe_direction = Leaf("0")) then [] 
     else let adj_address = if (maybe_direction = Leaf("that")) then 3 else 2 in
-    if not (check_det "adjacent" (at entity [1;adj_address;1])) then raise Incorrect_determiner else
+    let det = find_det entity [1;adj_address;1;0] in
+    if not (check_det "adjacent" det) then raise Incorrect_determiner else
     let direction = 
       string_of_leaf (
         if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
@@ -79,6 +64,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
       ) in
     let (c, s, al) = extract_info m entity [1;adj_address;1] in
     let adjacent_entity = find_ID m c s al in
+    let _ = return_ID_list m c s al (determiner_of_string det) in 
   [direction, adjacent_entity] in
   (color_of_string color, shape_of_string shape, (List.map adjacent_of_string adjacent))
 
@@ -134,39 +120,53 @@ let get_tree (instruction : string) =
 (* Returns a create command given a string and model *)
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "create" tree) then raise Incorrect_determiner else
-    let (c, s, al) = extract_info m tree [0;1] in
-    let s = if s = Object then (shape_of_string (random_shape ())) else s in 
-    Create (Entity (!(genid ()), s, c), al)
+  let det = find_det tree [0;1;0] in
+  let howmany = if det = "a" then 1 else int_of_string det in
+  if not (check_det "create" det) then raise Incorrect_determiner else
+  let (c, s, al) = extract_info m tree [0;1] in
+  let message = Printf.sprintf 
+    "created %d %s %s" howmany (string_of_color c) (string_of_shape s) in
+  let message = if howmany > 1 then message^"s\n" else message^"\n" in
+  Create (howmany, c, s, al, message)
 
 
 (* Returns a delete command given a string and model *)
 let delete_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "delete" tree) then raise Incorrect_determiner else
+  let det = find_det tree [0;1;0] in
+  if not (check_det "delete" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
-    let id = find_ID m c s al in
-    let det = find_det tree [0;1;0;0] in
-    Delete (id, determiner_of_string det)
+    let id_list = return_ID_list m c s al (determiner_of_string det) in
+    let len = List.length id_list in
+    let message = Printf.sprintf 
+      "deleted %d %s %s" len (string_of_color c) (string_of_shape s) in
+    let message = if len > 1 then message^"s\n" else message^"\n" in
+    Delete (id_list, message)
 
 
 (* Returns a paint command given a string and model *)
 let paint_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "paint" tree) then raise Incorrect_determiner else
+  let det = find_det tree [0;1;0] in
+  if not (check_det "paint" det) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
-    let id = find_ID m c s al in
+    let id_list = return_ID_list m c s al (determiner_of_string det) in
     let new_color = string_of_leaf (at tree [0;2;0]) in
-    let det = find_det tree [0;1;0;0] in
-    Paint (id, color_of_string new_color, determiner_of_string det)
+    let len = List.length id_list in
+    let message = Printf.sprintf
+      "painted %d %s %s %s" len (string_of_color c) (string_of_shape s) new_color in
+    let message = if len > 1 then message^"s\n" else message^"\n" in
+    Paint (id_list, color_of_string new_color, message)
 
 
 (* Returns a move command given a string and model *)
 let move_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
-  if not (check_det "move" tree) then raise Incorrect_determiner else
+  let det1 = find_det tree [0;1;0] in (* Determiner of the first entity *)
+  let det2 = find_det tree [0;3;0] in (* Determiner of the second entity *)
+  if not (check_det "move" det2) then raise Incorrect_determiner else
     let (c, s, al) = extract_info m tree [0;1] in
-    let id = find_ID m c s al in
+    let id_list = return_ID_list m c s al (determiner_of_string det1) in
     let (c2, s2, al2) = extract_info m tree [0;3] in
     let id2 = find_ID m c2 s2 al2 in
     let direction = string_of_leaf (
@@ -174,8 +174,12 @@ let move_command (m : model) (instruction : string) =
       then (at tree [0;2;1])
       else (at tree [0;2;0]) 
     ) in
-    let det = find_det tree [0;3;0;0] in
-    Move (id, [Adjacent (direction_of_string direction, id2)], determiner_of_string det)
+    let len = List.length id_list in
+    let message = Printf.sprintf "moved %d %s %s" len (string_of_color c) 
+      (string_of_shape s) in
+    let message = if len > 1 then message^"s" else message in
+    let message = message^(Printf.sprintf " %s the %s %s\n" (verbose_direction direction) (string_of_color c2) (string_of_shape s2)) in
+    Move (id_list, [Adjacent (direction_of_string direction, id2)], message)
 
 
 (* Returns an exists command given a string and model *)
