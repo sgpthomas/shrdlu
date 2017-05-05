@@ -288,7 +288,7 @@ let find (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : d
   Response (string_of_int (find_ID m c s adj_list ), m)
 
 
-let create_one (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
+let create_one (m : model) (e : entity) (adj_list : adjacent list) =
   (* Given a numbered list, an entity id, and an adjacent list, update the numbered list *)
   let update_adjacents (numbered : (int * (adjacent list)) list) (id : int) (adj_list : adjacent list) =
 
@@ -316,10 +316,10 @@ let create_one (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
     else
       new_numbered
   in
+  let Entity (id, s, c) = e in
   let s = if s = Object then (shape_of_string (random_shape ())) else s in
   let c = if c = Random then (color_of_string (random_color ())) else c in
-  let id = !(genid ()) in
-  let ent = Entity (id, s, c) in 
+  let ent = Entity (id, s, c) in
   let (el, al) = m in (* get entities and adjacents *)
   let new_el = List.append el [ent] in
   let new_al = update_adjacents al id adj_list in
@@ -329,7 +329,9 @@ let create_one (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
 let rec create (m : model) (howmany : int) (c : color) (s : shape) (adj_list : adjacent list) (message : string) =
   match howmany with
     | 0 -> Response (message, m)
-    | _ -> let new_model = (create_one m c s adj_list) in create new_model (howmany-1) c s adj_list message  
+    | _ ->
+      let e = Entity (!(genid ()), s, c) in
+      let new_model = (create_one m e adj_list) in create new_model (howmany-1) c s adj_list message
 
 
 let delete_one (m : model) (id : int) =
@@ -359,7 +361,7 @@ let delete_one (m : model) (id : int) =
   let new_model = (new_el, new_al) in
   new_model
 
-let rec delete (m : model) (id_list : int list) (message : string) = 
+let rec delete (m : model) (id_list : int list) (message : string) =
   match id_list with
   | [] -> Response (message, m)
   | head :: tail -> let new_model = (delete_one m head) in delete new_model tail message
@@ -384,9 +386,8 @@ let rec paint (m : model) (id_list : int list) (nc : color) (message : string) =
 
 let move_one (m : model) (id : int) (adj_list : adjacent list) =
   let nm = delete_one m id in
-  let Entity (_, shape, color) = (entity_of_id m id) in
-  let Response (_, new_model) = create nm 1 color shape adj_list "" in
-  new_model
+  let e = (entity_of_id m id) in
+  create_one nm e adj_list
 
 let rec move (m : model) (id_list : int list) (adj_list : adjacent list) (message : string) =
   match id_list with
