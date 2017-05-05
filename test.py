@@ -1,17 +1,20 @@
 from pwn import *
 import re
 
-test1 = {
-    "create a red cube": ["created 1: red cube"],
-    "create a blue sphere above the red cube": ["created 2: blue sphere"],
-    "#print": [" [1] -> red cube ( above: 2 )"," [2] -> blue sphere ( below: 1 )"]
-}
+test1 = [
+    ("create a blue sphere", ["created 1 blue sphere"]),
+    ("create an orange cube", ["created 1 orange cube"]),
+    ("move the orange cube to the right of the blue sphere", ["Debug returnID: 1 such orange cubes ", "moved 1 orange cube to the right of the blue sphere"]),
+    ("#print", [" [1] -> blue sphere ( right: 2 )", " [2] -> orange cube ( left: 1 )"])
+]
 
-test2 = {
-    "create a blue cube": ["created 1: blue cube"]
-}
+self_reference = [
+    ("create a red cube", ["created 1 red cube"]),
+    ("move a red cube above the red cube", ["Debug returnID: 1 such red cubes ", "can't move an object in reference to itself"]),
+    ("#print", [" [1] -> red cube ()"])
+]
 
-tests = [test1, test2]
+tests = [test1, self_reference]
 
 ansi_escape = re.compile(r'\x1b[^m]*m')
 
@@ -29,15 +32,17 @@ def run_tests():
         log.info("*=*=*=* Running  Test {} *=*=*=*".format(i))
         child = new_child()
         child.recvuntil("shrdlu>")
-        for s in t:
-            result = command(child, s).split('\n')
+        res = True
+        for (c, r) in t:
+            result = command(child, c).split('\n')
             result.pop()
-            results[i] = (result == t[s])
-            if result == t[s]:
+            res = res & (result == r)
+            if result == r:
                 log.info("Passed")
             else:
-                log.warning("Failed! Expected \"{}\" but got \"{}\"".format(t[s], result))
+                log.warning("Failed! Expected \"{}\" but got \"{}\"".format(r, result))
 
+        results[i] = res
         child.kill()
         log.info("*=*=*=* Finished Test {} *=*=*=*".format(i))
         print("")

@@ -382,22 +382,31 @@ let rec paint (m : model) (id_list : int list) (nc : color) (message : string) =
     | [] -> Response (message, m)
     | head :: tail -> let new_model = (paint_one m head nc message) in paint new_model tail nc message
 
-
-
 let move_one (m : model) (id : int) (adj_list : adjacent list) =
+  let rec check_adjacents (al : adjacent list) =
+    match al with
+    | [] -> true
+    | hd :: tl ->
+      let Adjacent (_, eid) = hd in if id = eid then false else true
+  in
+
   let nm = delete_one m id in
   let e = (entity_of_id m id) in
-  create_one nm e adj_list
+  if check_adjacents adj_list then create_one nm e adj_list else raise Cant_self_reference
 
 let rec move (m : model) (id_list : int list) (adj_list : adjacent list) (message : string) =
-  match id_list with
+  try
+    match id_list with
     | [] -> Response (message, m)
     | head :: tail -> let new_model = (move_one m head adj_list) in move new_model tail adj_list message
+  with
+  | Cant_self_reference -> Response ("can't move an object in reference to itself\n", m)
+  | _ -> Response ("something unexpected went wrong while moving\n", m)
 
 
 let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj_list : adjacent list) =
   let res = get_matches m color shape adj_list in
-  let num_items = List.length res in 
+  let num_items = List.length res in
   let b = match quant with
     | Less (n) -> num_items < n
     | Least (n) -> num_items >= n
