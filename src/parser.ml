@@ -9,19 +9,6 @@ let string_of_leaf = function
   | _ -> raise Not_a_leaf
 
 
-(* Generates a random color string *)
-let random_color () =
-  let color_list = ["red";"orange";"yellow";"green";"blue";"purple"] in
-  let random = Random.int (List.length color_list) in
-  List.nth color_list random
-
-(* Generates a random shape string *)
-let random_shape () =
-  let shape_list = ["cube";"sphere";"pyramid";"cylinder"] in
-  let random = Random.int (List.length shape_list) in
-  List.nth shape_list random
-
-
 (* Finds the determiner at a given address. "a" if none *)
 let find_det tree address =
   if (at tree address) = (Leaf "0") then "a" else (* Set null determiner equivalent to "a" *)
@@ -55,7 +42,7 @@ let rec extract_info (m : model) (instruction : tree) (address : int list) =
     if ((at entity [1;0]) = (Leaf "0")) then
       match (at instruction [0]) with
         (* If color not defined for create command, default to white *)
-        | Branch ("Create", _) -> (Leaf (random_color ()))
+        | Branch ("Create", _) -> (Leaf ("random"))
         (* If color not defined for other commands, then color unknown *)
         | _ -> (Leaf "unknown")
     (* Color has been explicitly defined *)
@@ -137,12 +124,10 @@ let create_command (m : model) (instruction : string) =
   let howmany = if det = "a" then 1 else int_of_string det in
   if not (check_det "create" det) then raise Incorrect_determiner else
   let (c, s, al) = extract_info m tree [0;1] in
-  let s = if s = Object then (shape_of_string (random_shape ())) else s in 
   let message = Printf.sprintf 
     "created %d %s %s" howmany (string_of_color c) (string_of_shape s) in
   let message = if howmany > 1 then message^"s\n" else message^"\n" in
-  let ent = Entity (!(genid ()), s, c) in 
-  Create (howmany, ent, al, message)
+  Create (howmany, c, s, al, message)
 
 
 (* Returns a delete command given a string and model *)

@@ -48,7 +48,7 @@ and quantifier words = ((any_one_of ["least";"exactly";"most";"more";"less"] &. 
 and d words = ((any_one_of ["the";"a";"all"]) |. number >. unary "D") words
 and number = (any_one_of ["1";"2";"3";"4";"5";"6";"7";"8";"9";"10"]) >. unary "Number"
 and shape = (any_one_of ["cube";"sphere";"pyramid";"cylinder";"object"]) >. unary "Shape"
-and color = (any_one_of ["red";"orange";"yellow";"green";"blue";"purple"]) >. unary "Color"
+and color = (any_one_of ["red";"orange";"yellow";"green";"blue";"purple";"random"]) >. unary "Color"
 and direction = ((any_one_of ["above";"below";"behind";"front"]) >. unary "Direction")
     |. ((opt(terminal "the") &. (any_one_of ["left";"right"])) >. binary "Direction")
 
