@@ -268,15 +268,6 @@ let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list
     with
     | Not_enough_elements -> []
 
-(* let model_of_ID_list (m : model) (id_list : int list) = *)
-(*   let rec get_entities (el : entity list) = *)
-(*     match el with *)
-(*     | [] -> [] *)
-(*     | hd :: tl -> if (List.exist (fun x -> )) *)
-
-(*   let (entity_list, numbered_adj_list) = m in *)
-
-
 
 let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   let matches = get_matches m c s adj_list in

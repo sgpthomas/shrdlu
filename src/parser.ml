@@ -14,7 +14,7 @@ let find_det tree address =
   if (at tree address) = (Leaf "0") then "a" else (* Set null determiner equivalent to "a" *)
   let address = (List.append address [0]) in 
   let num_or_det = at tree address in
-    match num_or_det with 
+    match num_or_det with
     | Branch("Number",_) -> string_of_leaf (at num_or_det [0])
     | _ -> string_of_leaf num_or_det
 
@@ -36,37 +36,66 @@ let check_det command_type det =
  * a tree, it will extract its color, shape, and adjacent entities. Works
  * recursively by also extracting the info of the adjacent entities.
  *)
-let rec extract_info (m : model) (instruction : tree) (address : int list) =
-  let entity = at instruction address in
-  let color = string_of_leaf (
-    if ((at entity [1;0]) = (Leaf "0")) then
-      match (at instruction [0]) with
-        (* If color not defined for create command, default to white *)
-        | Branch ("Create", _) -> (Leaf ("random"))
-        (* If color not defined for other commands, then color unknown *)
-        | _ -> (Leaf "unknown")
-    (* Color has been explicitly defined *)
-    else (at entity [1;0;0])
-  ) in
-  let shape = string_of_leaf (at entity [1;1;0]) in
-  let maybe_direction = at entity [1;2] in
-  let adjacent = 
-    (* No adjacent entities *)
-    if (maybe_direction = Leaf("0")) then [] 
-    else let adj_address = if (maybe_direction = Leaf("that")) then 3 else 2 in
-    let det = find_det entity [1;adj_address;1;0] in
-    if not (check_det "adjacent" det) then raise Incorrect_determiner else
-    let direction = 
-      string_of_leaf (
-        if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
-        then (at entity [1;adj_address;0;1])
-        else (at entity [1;adj_address;0;0]) 
+let extract_info (m : model) (instruction : tree) (address : int list) =
+  let resolve (check : int list) (adj_list : adjacent list) =
+    let rec f al i =
+      match al with
+      | [] -> []
+      | hd::tl ->
+        (* if in the model nal, [id] has (dir: check) then return this and recur on rest of list
+           else just recur on rest of list*)
+        let Adjacent (dir, id) = hd in
+        let l = get_adjacent_list m id in
+        if List.mem (Adjacent (dir, i)) l then hd::(f tl i) else f tl i
+    in
+    List.flatten (List.map (f adj_list) check)
+  in
+  let rec extract (instruction : tree) (address : int list) =
+    let entity = at instruction address in
+    let color = string_of_leaf (
+        if ((at entity [1;0]) = (Leaf "0")) then
+          match (at instruction [0]) with
+          (* If color not defined for create command, default to white *)
+          | Branch ("Create", _) -> (Leaf ("random"))
+          (* If color not defined for other commands, then color unknown *)
+          | _ -> (Leaf "unknown")
+          (* Color has been explicitly defined *)
+        else (at entity [1;0;0])
       ) in
+
     let (c, s, al) = extract_info m entity [1;adj_address;1] in
     let adjacent_entity = find_ID m c s al in
   [direction, adjacent_entity] in
   (color_of_string color, shape_of_string shape, (List.map adjacent_of_string adjacent))
 
+    let shape = string_of_leaf (at entity [1;1;0]) in
+    let maybe_direction = at entity [1;2] in
+    let adjacent =
+      (* No adjacent entities *)
+      if (maybe_direction = Leaf("0")) then
+        []
+      else
+        let adj_address = if (maybe_direction = Leaf("that")) then 3 else 2 in
+        let det = find_det entity [1;adj_address;1;0] in
+        if not (check_det "adjacent" det) then raise Incorrect_determiner else
+          let direction =
+            string_of_leaf (
+              if ((at entity [1;adj_address;0;0]) = (Leaf "the") || (at entity [1;adj_address;0;0]) = (Leaf "0"))
+              then (at entity [1;adj_address;0;1])
+              else (at entity [1;adj_address;0;0])
+            ) in
+          let (c, s, al) = extract entity [1;adj_address;1] in
+          (* let adjacent_entity = find_ID m c s al in *)
+          let possible_IDs = return_ID_list m c s al All in
+          List.map (fun x -> (direction, x)) possible_IDs
+    in
+    let c, s = (color_of_string color, shape_of_string shape) in
+    if List.length adjacent > 1 then
+      (c, s, resolve (get_matches m c s []) (List.map adjacent_of_string adjacent))
+    else
+      (c, s, List.map adjacent_of_string adjacent)
+  in
+  extract instruction address
 
 
 
@@ -84,9 +113,9 @@ let bracket_tree (tr : tree) =
   match at tr [0] with
   | Leaf (s) -> Printf.sprintf "( %s )" s
   | Branch (s, tree_list) ->
-    String.filter (fun x -> x <> '0') 
-    (string_of_list 
-      (List.map (fun l -> "( " ^ string_of_list l ^ ")") 
+    String.filter (fun x -> x <> '0')
+    (string_of_list
+      (List.map (fun l -> "( " ^ string_of_list l ^ ")")
         (List.map (fun t -> (get_all_leaves []) t) tree_list)
       )
     )
@@ -112,7 +141,7 @@ let resolve_ambiguity (tl : tree list) =
 
 
 (* Given an instruction, returns a single parse tree or raises Tree_not_found *)
-let get_tree (instruction : string) = 
+let get_tree (instruction : string) =
   let tree_list = (wrapper command instruction) in
   if List.length tree_list <> 0 then resolve_ambiguity tree_list
   else raise Tree_not_found

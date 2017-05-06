@@ -14,7 +14,15 @@ self_reference = [
     ("#print", [" [1] -> red cube ()"])
 ]
 
-tests = [test1, self_reference]
+check_all_objects = [
+    ("create an orange cube", ["created 1 orange cube"]),
+    ("create a blue cube", ["created 1 blue cube"]),
+    ("create a purple sphere above the blue cube", ["Debug returnID: 1 such blue cubes ", "created 1 purple sphere"]),
+    ("paint the sphere above the cube green", ["Debug returnID: 2 such cubes ", "Debug returnID: 1 such spheres ", "painted 1  sphere green"]),
+    ("#print", [" [1] -> orange cube ()", " [2] -> blue cube ( above: 3 )", " [3] -> green sphere ( below: 2 )"])
+]
+
+tests = [test1, self_reference, check_all_objects]
 
 ansi_escape = re.compile(r'\x1b[^m]*m')
 
