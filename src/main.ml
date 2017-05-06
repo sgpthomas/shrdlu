@@ -28,6 +28,7 @@ let rec main (m : model) =
 
 
 (* Execute welcome and main *)
+Random.self_init () ;
 welcome () ;
 let (m : model) = ([], []) in
 main m

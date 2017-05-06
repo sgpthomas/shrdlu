@@ -207,10 +207,6 @@ let entity_of_id (m : model) (id : int) =
   let (entity_list, _) = m in f entity_list
 
 let get_matches (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
-  (* let rec print_list = function
-    [] -> ()
-    | e::l -> print_string(string_of_adjacent e) ; print_string " " ; print_list l in
-  let () = print_list adj_list in *)
   let rec match_entity (el : entity list) (result : int list) =
     match el with
     | [] -> result
@@ -248,6 +244,10 @@ let rec first_n_elements n mylist =
 (*  *)
 let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list) (det : determiner) =
   let matches = get_matches m c s adj_list in
+  let rec print_list = function
+    [] -> ()
+    | e::l -> print_string(string_of_int e) ; print_string " " ; print_list l in
+  let () = print_list matches in
   let c = string_of_color c in
   let s = string_of_shape s in
   let ent = if c = "" then s else Printf.sprintf "%s %s" c s in
