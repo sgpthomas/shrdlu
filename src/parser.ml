@@ -62,12 +62,6 @@ let extract_info (m : model) (instruction : tree) (address : int list) =
           (* Color has been explicitly defined *)
         else (at entity [1;0;0])
       ) in
-
-    let (c, s, al) = extract_info m entity [1;adj_address;1] in
-    let adjacent_entity = find_ID m c s al in
-  [direction, adjacent_entity] in
-  (color_of_string color, shape_of_string shape, (List.map adjacent_of_string adjacent))
-
     let shape = string_of_leaf (at entity [1;1;0]) in
     let maybe_direction = at entity [1;2] in
     let adjacent =
@@ -96,8 +90,6 @@ let extract_info (m : model) (instruction : tree) (address : int list) =
       (c, s, List.map adjacent_of_string adjacent)
   in
   extract instruction address
-
-
 
 (* Brackets the sentence into its top level constituents for disambigatuion purposes *)
 let bracket_tree (tr : tree) =
