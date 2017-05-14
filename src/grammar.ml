@@ -42,7 +42,7 @@ let number_strings =
 (* The custom grammar itself *)
 let rec command words = (query |. create |. delete |. paint |. move >. unary "Command") words
 and query words = (exists |. howmany >. unary "Query") words
-and create words = ((terminal "create") &. (entity |. terminal "random") >. binary "Create") words
+and create words = ((terminal "create") &. entity >. binary "Create") words
 and delete words = ((terminal "delete") &. entity >. binary "Delete") words
 and paint words = ((terminal "paint") &. entity &. color >. ternary "Paint") words
 and move words = ((terminal "move") &. entity &. direction &. entity >. fourary "Move") words
