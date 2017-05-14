@@ -30,6 +30,7 @@ type command =
   | Paint of int list * color * string
   | Find of color * shape * adjacent list * determiner
   | Exist of quantifier * (color * shape * adjacent list)
+  | Howmany of color * shape * adjacent list
   | Print
   | Reset
   | Error of string
@@ -405,6 +406,13 @@ let exists (m : model) (quant : quantifier) (color : color) (shape : shape) (adj
   in
   let msg = if b then "yes" else "no" in Response (msg^"\n", m)
 
+let howmany (m : model) (color : color) (shape : shape) (adj_list : adjacent list) =
+  let res = get_matches m color shape adj_list in
+  let num_items = List.length res in
+  let msg = (Printf.sprintf "%d found\n" num_items) in
+  Response (msg, m)
+
+
 let perform (c : command) (m : model) =
   match c with
   | Create (howmany, c, s, adj_list, message) -> create m howmany c s adj_list message
@@ -413,6 +421,7 @@ let perform (c : command) (m : model) =
   | Paint (id_list, new_color, message) -> paint m id_list new_color message
   | Find (color, shape, adj_list, det) -> find m color shape adj_list det
   | Exist (quant, (c, s, al)) -> exists m quant c s al
+  | Howmany (c, s, al) -> howmany m c s al
   | Print -> print_model m ; Response ("", m)
   | Reset -> Response ("reset model\n", ([], []))
   | Error (msg) -> print_string msg ; print_newline () ; Response ("", m)
