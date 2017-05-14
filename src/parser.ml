@@ -213,6 +213,13 @@ let exists_command (m : model) (instruction : string) =
     Exist (quantifier, (c, s,al))
 
 
+(* Returns a howmany command given a string and a model *)
+let howmany_command (m : model) (instruction : string) =
+  let tree = get_tree instruction in
+    let (c, s, al) = extract_info m tree [0;0;2] in
+    Howmany (c, s, al)
+
+
 (* Identifies and executes the instruction based on the first word of the instruction *)
 let parse (m : model) (instruction : string) =
   if instruction = "" then Error ("type something") else
@@ -225,6 +232,7 @@ let parse (m : model) (instruction : string) =
     | "move" -> move_command m instruction
     | "are"
     | "is" -> exists_command m instruction
+    | "how" -> howmany_command m instruction
     | "#print" -> Print
     | "#reset" -> Reset
     | "#parse" -> List.iteri (writetree) (wrapper command (snd (String.split instruction " "))) ; Error ("parsed tree")

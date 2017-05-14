@@ -41,12 +41,13 @@ let number_strings =
 
 (* The custom grammar itself *)
 let rec command words = (query |. create |. delete |. paint |. move >. unary "Command") words
-and query words = (exists >. unary "Query") words
+and query words = (exists |. howmany >. unary "Query") words
 and create words = ((terminal "create") &. (entity |. terminal "random") >. binary "Create") words
 and delete words = ((terminal "delete") &. entity >. binary "Delete") words
 and paint words = ((terminal "paint") &. entity &. color >. ternary "Paint") words
 and move words = ((terminal "move") &. entity &. direction &. entity >. fourary "Move") words
 and exists words = ((terminal "there") &. quantifier &. entity >. ternary "Exists") words
+and howmany words = ((terminal "how") &. (terminal "many") &. entity &. opt(terminal "there") >. fourary "How many" ) words
 and entity words = ( opt(d) &. (thatLessentity |. thatFulentity) >. binary "Entity") words
 and thatLessentity words = (( opt(color) &. shape &. opt(adjacent)) >. ternary "thatLessEntity") words
 and thatFulentity words = (( opt(color) &. shape &. (terminal "that") &. adjacent) >. fourary "thatFulEntity") words
