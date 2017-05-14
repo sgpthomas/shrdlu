@@ -143,8 +143,8 @@ let get_tree (instruction : string) =
 let create_command (m : model) (instruction : string) =
   let tree = get_tree instruction in
   let det = find_det tree [0;1;0] in
-  let howmany = if det = "a" then 1 else int_of_string det in
   if not (check_det "create" det) then raise Incorrect_determiner else
+  let howmany = if det = "a" then 1 else int_of_string det in
   let (c, s, al) = extract_info m tree [0;1] in
   let message = Printf.sprintf 
     "created %d %s %s" howmany (string_of_color c) (string_of_shape s) in
