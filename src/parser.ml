@@ -80,7 +80,7 @@ let extract_info (m : model) (instruction : tree) (address : int list) =
             ) in
           let (c, s, al) = extract entity [1;adj_address;1] in
           (* let adjacent_entity = find_ID m c s al in *)
-          let possible_IDs = return_ID_list m c s al All in
+          let possible_IDs = return_ID_list m c s al (determiner_of_string det) in
           List.map (fun x -> (direction, x)) possible_IDs
     in
     let c, s = (color_of_string color, shape_of_string shape) in
