@@ -148,7 +148,7 @@ let create_command (m : model) (instruction : string) =
   let (c, s, al) = extract_info m tree [0;1] in
   let message = Printf.sprintf 
     "created %d %s %s" howmany (string_of_color c) (string_of_shape s) in
-  let message = if howmany > 1 then message^"s\n" else message^"\n" in
+  let message = if howmany = 1 then message^"\n" else message^"s\n" in
   Create (howmany, c, s, al, message)
 
 
@@ -162,7 +162,7 @@ let delete_command (m : model) (instruction : string) =
     let len = List.length id_list in
     let message = Printf.sprintf 
       "deleted %d %s %s" len (string_of_color c) (string_of_shape s) in
-    let message = if len > 1 then message^"s\n" else message^"\n" in
+    let message = if len = 1 then message^"\n" else message^"s\n" in
     Delete (id_list, message)
 
 
@@ -176,8 +176,9 @@ let paint_command (m : model) (instruction : string) =
     let new_color = string_of_leaf (at tree [0;2;0]) in
     let len = List.length id_list in
     let message = Printf.sprintf
-      "painted %d %s %s %s" len (string_of_color c) (string_of_shape s) new_color in
-    let message = if len > 1 then message^"s\n" else message^"\n" in
+      "painted %d %s %s" len (string_of_color c) (string_of_shape s) in
+    let message = if len = 1 then message else message^"s" in
+    let message = message^(Printf.sprintf " %s\n" new_color) in
     Paint (id_list, color_of_string new_color, message)
 
 
@@ -199,7 +200,7 @@ let move_command (m : model) (instruction : string) =
     let len = List.length id_list in
     let message = Printf.sprintf "moved %d %s %s" len (string_of_color c) 
       (string_of_shape s) in
-    let message = if len > 1 then message^"s" else message in
+    let message = if len = 1 then message else message^"s" in
     let message = message^(Printf.sprintf " %s the %s %s\n" (verbose_direction direction) (string_of_color c2) (string_of_shape s2)) in
     Move (id_list, [Adjacent (direction_of_string direction, id2)], message)
 

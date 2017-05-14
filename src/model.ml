@@ -202,7 +202,7 @@ let flip_adjacent (a : adjacent) =
 let entity_of_id (m : model) (id : int) =
   let rec f (el : entity list) =
     match el with
-    | [] -> raise (No_such_entity_exception (Printf.sprintf "debug3id: %d" id))
+    | [] -> raise (No_such_entity_exception (Printf.sprintf "id: %d" id))
     | Entity (i, s, c)::tl -> if i = id then Entity (i, s, c) else f tl
   in
   let (entity_list, _) = m in f entity_list
@@ -249,10 +249,10 @@ let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list
   let s = string_of_shape s in
   let ent = if c = "" then s else Printf.sprintf "%s %s" c s in
   match matches with
-  | [] -> raise (No_such_entity_exception (Printf.sprintf "debug1%s" ent))
+  | [] -> raise (No_such_entity_exception (Printf.sprintf "%s" ent))
   | x ->
     let len = List.length matches in
-    let () = (Printf.printf "Debug returnID: %d such %ss \n" len ent) in
+    (* let () = (Printf.printf "Debug returnID: %d such %ss \n" len ent) in *)
     try
       match det with
       | A -> [List.hd matches]
@@ -260,7 +260,9 @@ let return_ID_list (m : model) (c : color) (s : shape) (adj_list : adjacent list
         [List.hd matches]
       | All -> matches
       | Number (n) ->
-        if n > len then raise Not_enough_elements
+        if n > len then 
+        let () = Printf.printf "only %d such %ss found\n" len ent in
+        raise Not_enough_elements
         else first_n_elements n matches
     with
     | Not_enough_elements -> []
@@ -270,7 +272,7 @@ let find_ID (m : model) (c : color) (s : shape) (adj_list : adjacent list) =
   let matches = get_matches m c s adj_list in
 
   match matches with
-  | [] -> raise (No_such_entity_exception (Printf.sprintf "debug2%s %s" (string_of_color c) (string_of_shape s)))
+  | [] -> raise (No_such_entity_exception (Printf.sprintf "%s %s" (string_of_color c) (string_of_shape s)))
   | x -> List.hd x
 
 
