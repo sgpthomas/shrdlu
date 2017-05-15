@@ -79,7 +79,6 @@ let extract_info (m : model) (instruction : tree) (address : int list) =
               else (at entity [1;adj_address;0;0])
             ) in
           let (c, s, al) = extract entity [1;adj_address;1] in
-          (* let adjacent_entity = find_ID m c s al in *)
           let possible_IDs = return_ID_list m c s al (determiner_of_string det) in
           List.map (fun x -> (direction, x)) possible_IDs
     in
@@ -244,8 +243,8 @@ let parse (m : model) (instruction : string) =
   | No_such_shape_exception -> Error ("No such shape")
   | No_such_color_exception -> Error ("No such color")
   | No_such_command_exception -> Error ("No such command")
-  (* | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg) *)
+  | No_such_entity_exception (msg) -> Error (Printf.sprintf "Unable to find this '%s' in the model" msg)
   | Tree_not_found -> Error ("Failed to parse input")
   | Not_a_leaf -> Error ("Called string_of_leaf incorrectly")
   | Incorrect_determiner -> Error ("Used an incorrect determiner")
-  (* | _ -> Error ("Something unexpected went wrong") *)
+  | _ -> Error ("Something unexpected went wrong")
